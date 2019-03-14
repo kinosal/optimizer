@@ -1,4 +1,5 @@
 .DS_Store
 .env
 *.csv
+*.json
 __pycache__

@@ -1,59 +1,61 @@
 """
-[options, data] = process_data(file='ads.csv', level='ad')
-bb = BetaBandit(num_options=max(data.option_id)+1)
-bb.bulk_add_results(data)
-bb.repeat_choice(repetitions=100)
+data = pd.read_json('ads.json')
+data = facebook(data, 'ad', 'Impressions', 'Link Clicks')
+[options, data] = process(data)
+bandit = BetaBandit(options=options)
+bandit.bulk_add_results(data)
+bandit.repeat_choice(repetitions=100)
 """
 
+from datetime import date
 import numpy as np
 import pandas as pd
 from scipy.stats import beta
-from datetime import date
 # import matplotlib.pyplot as plt
 
 
-def process_data(file, level):
-    data = pd.read_csv(file)
-    # Extract relevant columns
-    if level == 'ad':
-        data = data[['Ad ID', 'Reporting Ends', 'Impressions', 'Link Clicks']]
-    elif level == 'adset':
-        data = data[['Ad Set ID', 'Reporting Ends',
-                     'Impressions', 'Link Clicks']]
-    # Assign new IDs starting from 0 to ads and ad sets respectively
-    # to use as indices for BetaBandit options
+def facebook(data, dimension, trials, successes):
+    # Extract and rename relevant columns
+    if dimension == 'ad':
+        data = data[['Ad ID', 'Reporting Ends', trials, successes]]
+    elif dimension == 'adset':
+        data = data[['Ad Set ID', 'Reporting Ends', trials, successes]]
+    data.columns = ['id', 'date', 'trials', 'successes']
+    return data
+
+
+def process(data):
+    """
+    Processes dataframe with id, date, trials and successes and
+    returns distinct id options as well as dataframe with Bandit results
+    """
+    # Assign new IDs starting from 0 to options to use as indices for Bandit
+    options = data['id'].drop_duplicates().reset_index()
     data['option_id'] = 0
-    if file == 'ads.csv':
-        options = data['Ad ID'].drop_duplicates().reset_index()
-        for i in range(len(data)):
-            data.at[i, 'option_id'] = options.loc[
-                options['Ad ID'] == data.iloc[i]['Ad ID']].index[0]
-    elif file == 'adsets.csv':
-        options = data['Ad Set ID'].drop_duplicates().reset_index()
-        for i in range(len(data)):
-            data.at[i, 'option_id'] = options.loc[
-                options['Ad Set ID'] == data.iloc[i]['Ad Set ID']].index[0]
+    for i in range(len(data)):
+        data.at[i, 'option_id'] = options.loc[
+            options['id'] == data.iloc[i]['id']].index[0]
     # Calculate and save days ago for every result
-    data['Reporting Ends'] = \
-        pd.to_datetime(data['Reporting Ends'], format='%Y-%m-%d').dt.date
+    data['date'] = pd.to_datetime(data['date'], format='%Y-%m-%d').dt.date
     data['days_ago'] = 0
     for i in range(len(data)):
-        data.at[i, 'days_ago'] = \
-            (date.today() - data.iloc[i]['Reporting Ends']).days
+        data.at[i, 'days_ago'] = (date.today() - data.iloc[i]['date']).days
     # Drop results that are older than 28 days
     data = data[data['days_ago'] <= 28]
-    # Set NaN Impressions and Link Clicks to 0
-    data['Impressions'].fillna(value=0, inplace=True)
-    data['Link Clicks'].fillna(value=0, inplace=True)
+    # Set empty and NaN Impressions and Link Clicks to 0
+    data = data.replace('', np.nan)
+    data['trials'].fillna(value=0, inplace=True)
+    data['successes'].fillna(value=0, inplace=True)
     return [options, data]
 
 
 class BetaBandit():
-    def __init__(self, num_options, prior=(1.0, 1.0)):
-        self.trials = np.zeros(shape=(num_options,), dtype=float)
-        self.successes = np.zeros(shape=(num_options,), dtype=float)
-        self.num_options = num_options
+    def __init__(self, options, prior=(1.0, 1.0)):
+        self.options = options
+        self.num_options = len(options)
         self.prior = prior
+        self.trials = np.zeros(shape=(self.num_options,), dtype=float)
+        self.successes = np.zeros(shape=(self.num_options,), dtype=float)
 
     def add_results(self, option_id, trials, successes, distance, cutoff=28):
         self.trials[option_id] = self.trials[option_id] + \
@@ -64,8 +66,8 @@ class BetaBandit():
     def bulk_add_results(self, data):
         for i in range(len(data)):
             self.add_results(data.iloc[i]['option_id'],
-                             data.iloc[i]['Impressions'],
-                             data.iloc[i]['Link Clicks'],
+                             data.iloc[i]['trials'],
+                             data.iloc[i]['successes'],
                              data.iloc[i]['days_ago'])
 
     def choose_option(self):
@@ -79,12 +81,19 @@ class BetaBandit():
         # Return the index of the sample with the largest value
         return sampled_theta.index(max(sampled_theta))
 
-    def repeat_choice(self, repetitions):
+    def repeat_choice(self, repetitions, onoff=False):
         option_counts = np.zeros(shape=(self.num_options,), dtype=int)
         for _ in range(repetitions):
             option = self.choose_option()
             option_counts[option] += 1
+        if onoff:
+            option_counts = (option_counts > 0).astype(int)
         return option_counts
+
+    def choices(self, options, repetitions, onoff):
+        ids = options['id'].apply(str)
+        choices = self.repeat_choice(repetitions, onoff).tolist()
+        return dict(zip(ids, choices))
 
     # def show_pdfs(self):
     #     x = np.linspace(0, 0.1, 100)
