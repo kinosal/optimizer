@@ -1,5 +1,5 @@
 """
-data = pd.read_json('ads.json')
+data = pd.read_csv('ads.csv')
 data = facebook(data, 'ad', 'Impressions', 'Link Clicks')
 [options, data] = process(data)
 bandit = BetaBandit(options=options)
@@ -14,12 +14,25 @@ from scipy.stats import beta
 # import matplotlib.pyplot as plt
 
 
-def facebook(data, dimension, trials, successes):
+def facebook(data, dimension, purchase_factor):
+    # Set empty and NaN Impressions, Link Clicks and Purchases to 0
+    # for calculations
+    data = data.replace('', np.nan)
+    data['Impressions'].fillna(value=0, downcast='infer', inplace=True)
+    data['Link Clicks'].fillna(value=0, downcast='infer', inplace=True)
+    data['Purchases'].fillna(value=0, downcast='infer', inplace=True)
+    # Create successes column as Link Clicks + Purchases * purchase factor,
+    # maximise successes (alpha) to trials = impressions (beta) for PDF
+    data['successes'] = [min(row['Link Clicks'] +
+                             row['Purchases'] * purchase_factor,
+                             row['Impressions'])
+                         for index, row in data.iterrows()]
     # Extract and rename relevant columns
     if dimension == 'ad':
-        data = data[['Ad ID', 'Reporting Ends', trials, successes]]
+        data = data[['Ad ID', 'Reporting Ends', 'Impressions', 'successes']]
     elif dimension == 'adset':
-        data = data[['Ad Set ID', 'Reporting Ends', trials, successes]]
+        data = data[['Ad Set ID', 'Reporting Ends',
+                     'Impressions', 'successes']]
     data.columns = ['id', 'date', 'trials', 'successes']
     return data
 
@@ -42,10 +55,6 @@ def process(data):
         data.at[i, 'days_ago'] = (date.today() - data.iloc[i]['date']).days
     # Drop results that are older than 28 days
     data = data[data['days_ago'] <= 28]
-    # Set empty and NaN Impressions and Link Clicks to 0
-    data = data.replace('', np.nan)
-    data['trials'].fillna(value=0, inplace=True)
-    data['successes'].fillna(value=0, inplace=True)
     return [options, data]
 
 
@@ -73,7 +82,7 @@ class BetaBandit():
     def choose_option(self):
         sampled_theta = []
         for i in range(self.num_options):
-            # Construct beta distribution for posterior
+            # Construct beta distribution for each option's success
             dist = beta(self.prior[0] + self.successes[i],
                         self.prior[1] + self.trials[i] - self.successes[i])
             # Draw one sample from beta distribution

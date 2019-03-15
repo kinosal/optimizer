@@ -14,7 +14,11 @@ def ping():
 @app.route('/ads', methods=['POST'])
 def ads():
     data = request.json
-    picks = pick(data, 'ad')
+    if 'budget' in request.args:
+        budget = min(int(request.args['budget']), 100)
+    else:
+        budget = 100
+    picks = pick(data=data, dimension='ad', repetitions=budget)
     return jsonify(picks)
 
 
@@ -25,15 +29,16 @@ def adsets():
     return jsonify(picks)
 
 
-def pick(payload, dimension, formatted=False):
-    data = pd.DataFrame(payload)
+def pick(data, dimension, purchase_factor=10, repetitions=100,
+         formatted=False, onoff=True):
+    data = pd.DataFrame(data)
     if not formatted:
-        data = choose.facebook(data, dimension, 'Impressions', 'Link Clicks')
+        data = choose.facebook(data, dimension, purchase_factor)
     [options, data] = choose.process(data)
-    bandit = choose.BetaBandit(options=options)
+    bandit = choose.BetaBandit(options)
     bandit.bulk_add_results(data)
-    return bandit.choices(options=options, repetitions=100, onoff=True)
+    return bandit.choices(options, repetitions, onoff)
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
