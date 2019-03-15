@@ -1,0 +1,11 @@
+{
+    "dev": {
+        "app_function": "api.app",
+        "profile_name": "default",
+        "project_name": "ad-optimization",
+        "runtime": "python3.6",
+        "slim_handler": true,
+        "s3_bucket": "ad-optimization",
+        "aws_region": "eu-west-1"
+    }
+}
