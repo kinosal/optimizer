@@ -37,7 +37,7 @@ def ads_form():
 @app.route('/ads', methods=['POST'])
 def ads():
     if 'budget' in request.args:
-        repetitions = min(int(request.args['budget']), 1000)
+        repetitions = min(int(request.args['budget']), 100)
     else:
         repetitions = 100
     data = pd.DataFrame(request.json)
