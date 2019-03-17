@@ -1,44 +1,59 @@
-from flask import Flask, request, jsonify
+from io import StringIO
+from flask import Flask, request
 import pandas as pd
-import choose
+import choosing
 
 
 app = Flask(__name__)
 
 
-@app.route('/ping', methods=['POST'])
+@app.route('/ping', methods=['GET', 'POST'])
 def ping():
-    return jsonify({'ping': 'successful'})
+    return 'Server is here'
+
+
+@app.route('/csv/ads', methods=['GET', 'POST'])
+def ads_form():
+    if request.method == 'POST':
+        repetitions = int(request.form['budget'])
+        data = pd.read_csv(StringIO(request.form['ads']))
+        choices = choose(data=data, repetitions=repetitions)
+        choices.columns = ['Ad ID', 'Ad Set ID', 'Campaign ID', 'Ad Status']
+        choices.replace(True, 'ACTIVE', inplace=True)
+        choices.replace(False, 'PAUSED', inplace=True)
+        return choices.to_csv(index=False, header=True,
+                              line_terminator='<br>', sep='\t')
+
+    return '''<form method="POST">
+                  Daily Budget<br>
+                  <input name="budget" type="number" min="1" step="1" /><br><br>
+                  Ads (CSV)<br>
+                  Reporting Starts,Reporting Ends,Ad Name,Ad ID,Campaign Name,Campaign ID,Ad Set Name,Ad Set ID,Impressions,Link Clicks,Purchases<br>
+                  <textarea name="ads" rows="50" cols="100"></textarea><br><br>
+                  <input type="submit" value="Submit"><br>
+              </form>'''
 
 
 @app.route('/ads', methods=['POST'])
 def ads():
-    data = request.json
     if 'budget' in request.args:
-        budget = min(int(request.args['budget']), 100)
+        repetitions = min(int(request.args['budget']), 1000)
     else:
-        budget = 100
-    picks = pick(data=data, dimension='ad', repetitions=budget)
-    return jsonify(picks)
+        repetitions = 100
+    data = pd.DataFrame(request.json)
+    choices = choose(data=data, repetitions=repetitions)
+    return choices.to_json(orient='records')
 
 
-@app.route('/adsets', methods=['POST'])
-def adsets():
-    data = request.json
-    picks = pick(data, 'adset')
-    return jsonify(picks)
-
-
-def pick(data, dimension, purchase_factor=10, repetitions=100,
-         formatted=False, onoff=True):
-    data = pd.DataFrame(data)
+def choose(data, purchase_factor=10, repetitions=100,
+           formatted=False, onoff=True):
     if not formatted:
-        data = choose.facebook(data, dimension, purchase_factor)
-    [options, data] = choose.process(data)
-    bandit = choose.BetaBandit(options)
+        data = choosing.facebook(data, purchase_factor)
+    [options, data] = choosing.process(data)
+    bandit = choosing.BetaBandit(options)
     bandit.bulk_add_results(data)
     return bandit.choices(options, repetitions, onoff)
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()

@@ -1,10 +1,11 @@
 """
+import choosing
 data = pd.read_csv('ads.csv')
-data = facebook(data, 'ad', 'Impressions', 'Link Clicks')
-[options, data] = process(data)
-bandit = BetaBandit(options=options)
+data = choosing.facebook(data=data, purchase_factor=10)
+[options, data] = choosing.process(data)
+bandit = choosing.BetaBandit(options)
 bandit.bulk_add_results(data)
-bandit.repeat_choice(repetitions=100)
+bandit.choices(options=options, repetitions=10, onoff=True)
 """
 
 from datetime import date
@@ -14,7 +15,7 @@ from scipy.stats import beta
 # import matplotlib.pyplot as plt
 
 
-def facebook(data, dimension, purchase_factor):
+def facebook(data, purchase_factor):
     # Set empty and NaN Impressions, Link Clicks and Purchases to 0
     # for calculations
     data = data.replace('', np.nan)
@@ -28,26 +29,25 @@ def facebook(data, dimension, purchase_factor):
                              row['Impressions'])
                          for index, row in data.iterrows()]
     # Extract and rename relevant columns
-    if dimension == 'ad':
-        data = data[['Ad ID', 'Reporting Ends', 'Impressions', 'successes']]
-    elif dimension == 'adset':
-        data = data[['Ad Set ID', 'Reporting Ends',
-                     'Impressions', 'successes']]
-    data.columns = ['id', 'date', 'trials', 'successes']
+    data = data[['Ad ID', 'Ad Set ID', 'Campaign ID',
+                 'Reporting Ends', 'Impressions', 'successes']]
+    data.columns = ['ad_id', 'adset_id', 'campaign_id',
+                    'date', 'trials', 'successes']
     return data
 
 
 def process(data):
     """
-    Processes dataframe with id, date, trials and successes and
-    returns distinct id options as well as dataframe with Bandit results
+    Process dataframe with ad-, adset-, campaign id, date, trials, successes;
+    return distinct id options as well as dataframe with Bandit results
     """
     # Assign new IDs starting from 0 to options to use as indices for Bandit
-    options = data['id'].drop_duplicates().reset_index()
+    options = data[['ad_id', 'adset_id', 'campaign_id']] \
+        .drop_duplicates().reset_index().drop('index', axis='columns')
     data['option_id'] = 0
     for i in range(len(data)):
         data.at[i, 'option_id'] = options.loc[
-            options['id'] == data.iloc[i]['id']].index[0]
+            options['ad_id'] == data.iloc[i]['ad_id']].index[0]
     # Calculate and save days ago for every result
     data['date'] = pd.to_datetime(data['date'], format='%Y-%m-%d').dt.date
     data['days_ago'] = 0
@@ -96,13 +96,13 @@ class BetaBandit():
             option = self.choose_option()
             option_counts[option] += 1
         if onoff:
-            option_counts = (option_counts > 0).astype(int)
+            option_counts = (option_counts > 0)
         return option_counts
 
     def choices(self, options, repetitions, onoff):
-        ids = options['id'].apply(str)
         choices = self.repeat_choice(repetitions, onoff).tolist()
-        return dict(zip(ids, choices))
+        options['choice'] = choices
+        return options
 
     # def show_pdfs(self):
     #     x = np.linspace(0, 0.1, 100)
