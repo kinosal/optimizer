@@ -6,6 +6,7 @@
         "runtime": "python3.6",
         "slim_handler": true,
         "s3_bucket": "ad-optimization",
-        "aws_region": "eu-west-1"
+        "aws_region": "eu-west-1",
+        "memory_size": 2048
     }
 }
