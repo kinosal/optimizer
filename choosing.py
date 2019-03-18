@@ -36,7 +36,7 @@ def facebook(data, purchase_factor):
     return data
 
 
-def process(data):
+def process(data, cutoff=7):
     """
     Process dataframe with ad-, adset-, campaign id, date, trials, successes;
     return distinct id options as well as dataframe with Bandit results
@@ -53,8 +53,8 @@ def process(data):
     data['days_ago'] = 0
     for i in range(len(data)):
         data.at[i, 'days_ago'] = (date.today() - data.iloc[i]['date']).days
-    # Drop results that are older than 28 days
-    data = data[data['days_ago'] <= 28]
+    # Drop results that are older than the cutoff
+    data = data[data['days_ago'] <= cutoff]
     return [options, data]
 
 
@@ -66,11 +66,11 @@ class BetaBandit():
         self.trials = np.zeros(shape=(self.num_options,), dtype=float)
         self.successes = np.zeros(shape=(self.num_options,), dtype=float)
 
-    def add_results(self, option_id, trials, successes, distance, cutoff=28):
+    def add_results(self, option_id, trials, successes, distance, cutoff=7):
         self.trials[option_id] = self.trials[option_id] + \
-            trials * max(1 - distance / cutoff, 0)
+            trials * max(1 - distance / cutoff / 2, 0)
         self.successes[option_id] = self.successes[option_id] + \
-            successes * max(1 - distance / cutoff, 0)
+            successes * max(1 - distance / cutoff / 2, 0)
 
     def bulk_add_results(self, data):
         for i in range(len(data)):
