@@ -48,7 +48,7 @@ def ads():
 def choose(data, purchase_factor=10, repetitions=100,
            formatted=False, onoff=True):
     if not formatted:
-        data = choosing.facebook(data, purchase_factor)
+        data = choosing.import_facebook(data, purchase_factor)
     [options, data] = choosing.process(data)
     bandit = choosing.BetaBandit(options)
     bandit.bulk_add_results(data)
