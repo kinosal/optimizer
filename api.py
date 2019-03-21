@@ -15,7 +15,10 @@ def ping():
 @app.route('/csv/ads', methods=['GET', 'POST'])
 def ads_form():
     if request.method == 'POST':
-        repetitions = int(request.form['budget'])
+        if request.form['budget']:
+            repetitions = min(int(request.form['budget']), 100)
+        else:
+            repetitions = 100
         data = pd.read_csv(StringIO(request.form['ads']))
         choices = choose(data=data, repetitions=repetitions)
         choices.columns = ['Ad ID', 'Ad Set ID', 'Campaign ID', 'Ad Status']
