@@ -1,10 +1,20 @@
 '''
 import simulation
-results = simulation.experiment(periods=28,
-                                true_success_rates=[0.01, 0.015, 0.02, 0.025],
-                                deviation=0.1,
-                                trials_per_period=2000,
-                                max_p=0.05)
+
+results = simulation.compare_methods(periods=28,
+                                     true_success_rates=[0.01, 0.015],
+                                     deviation=0.0,
+                                     trials_per_period=2000,
+                                     max_p=0.1)
+
+results = simulation.compare_params(method='split',
+                                    param = 'trials_per_period',
+                                    values = [1000, 2000, 3000, 4000],
+                                    periods=28,
+                                    true_success_rates=[0.01, 0.015],
+                                    deviation=0.0,
+                                    max_p=0.1)
+
 simulation.plot(results['periods'],
                 results['parameters'],
                 comparison='relative')
@@ -14,81 +24,123 @@ import numpy as np
 import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
-import splitvsbandit
+import split as spl
+import bandit as ban
 
 
-def experiment(periods, true_success_rates=[0.01, 0.015], deviation=0.0,
-               trials_per_period=1000, max_p=0.05):
+def simulate(method, periods, true_success_rates, deviation,
+             trials_per_period, max_p=None):
+
     num_options = len(true_success_rates)
 
-    # Initialize Split and Bandit instances
-    split = splitvsbandit.Split(num_options=num_options)
-    bandit = splitvsbandit.BetaBandit(num_options=num_options)
+    # Initialize Split or Bandit instances
+    if method == 'split':
+        chooser = spl.Split(num_options=num_options)
+    elif method == 'bandit':
+        chooser = ban.Bandit(num_options=num_options)
 
-    # Calculate success rates under uncertainty (with deviation)
-    # for first period
-    success_rates = [np.random.normal(loc=rate, scale=rate * deviation)
-                     for rate in true_success_rates]
-
-    # Add results for first period
-    for i in range(num_options):
-        split.add_results(i, round(trials_per_period / num_options),
-                          round(trials_per_period / num_options *
-                                success_rates[i]))
-        bandit.add_results(i, round(trials_per_period / num_options),
-                           round(trials_per_period / num_options *
-                                 success_rates[i]))
-
-    split.calculate_p_value()
-
-    max_successes = [round(trials_per_period * max(success_rates))]
-    base_successes = [np.sum([round(trials_per_period / num_options *
-                                    success_rates[i])
-                              for i in range(num_options)])]
-    split_successes = [split.successes.sum()]
-    bandit_successes = [bandit.successes.sum()]
-
-    # For each period calculate and add trials and successes
-    for i in range(periods-1):
-        # Calculate success rates with deviation for this period
-        success_rates = [np.random.normal(loc=rate, scale=rate * deviation)
+    # For each period calculate and add successes for methods as well as
+    # the optimal (max) and the random choice (base)
+    successes = []
+    max_successes = []
+    base_successes = []
+    for i in range(periods):
+        # Calculate success rates under uncertainty (with deviation)
+        success_rates = [np.random.RandomState(i).
+                         normal(loc=rate, scale=rate * deviation)
                          for rate in true_success_rates]
 
-        # Optimal choice
-        max_successes.append(
-            max_successes[-1] + round(trials_per_period * max(success_rates)))
-
-        # Base (random) choice
-        base_successes.append(base_successes[-1] + np.sum([
-            round(trials_per_period / num_options * success_rates[i])
-            for i in range(num_options)]))
-
-        # Split
-        # Adjust max_p with Bonferroni method to allow sequential testing
-        # if split.p_value > max_p / (i + 2):
-        # Alternatively use Sidak correction
-        # if split.p_value > 1 - (1 - max_p) ** (1 / (i + 2)):
-        if split.p_value > 1 - (1 - max_p) ** (1 / (i + 2)):
+        # Add results based on and (Bonferroni adjusted) p-value for split
+        # and period for bandit
+        if (method == 'split' and chooser.p_value > max_p / (i + 1)) \
+           or (method == 'bandit' and i == 0):
             for j in range(num_options):
-                split.add_results(j, round(trials_per_period / num_options),
-                                  round(trials_per_period / num_options *
-                                        success_rates[j]))
-        else:
-            best_option = np.where(split.successes ==
-                                   max(split.successes))[0][0]
-            split.add_results(best_option, trials_per_period,
-                              round(trials_per_period * max(success_rates)))
-        split.calculate_p_value()
-        split_successes.append(split.successes.sum())
+                chooser.add_results(
+                    j, round(trials_per_period / num_options),
+                    round(trials_per_period / num_options *
+                          success_rates[j]))
 
-        # Bandit
-        option_percentages = bandit.repeat_choice(repetitions=100) / 100
-        for j in range(num_options):
-            bandit.add_results(
-                j, round(trials_per_period * option_percentages[j]),
-                round(trials_per_period * option_percentages[j] *
-                      success_rates[j]))
-        bandit_successes.append(bandit.successes.sum())
+        elif method == 'split':
+            best_option = np.where(chooser.successes ==
+                                   max(chooser.successes))[0][0]
+            chooser.add_results(
+                best_option, trials_per_period,
+                round(trials_per_period * max(success_rates)))
+
+        elif method == 'bandit':
+            option_percentages = chooser.repeat_choice(repetitions=100) / 100
+            for j in range(num_options):
+                chooser.add_results(
+                    j, round(trials_per_period * option_percentages[j]),
+                    round(trials_per_period * option_percentages[j] *
+                          success_rates[j]))
+
+        if method == 'split':
+            chooser.calculate_p_value()
+        successes.append(chooser.successes.sum())
+
+        if i == 0:
+            max_successes = [round(trials_per_period * max(success_rates))]
+            base_successes = [np.sum(
+                [round(trials_per_period / num_options * success_rates[i])
+                 for i in range(num_options)])]
+        else:
+            max_successes.append(max_successes[-1] +
+                                 round(trials_per_period * max(success_rates)))
+            base_successes.append(base_successes[-1] + np.sum([
+                round(trials_per_period / num_options * success_rates[i])
+                for i in range(num_options)]))
+
+    return [successes, max_successes, base_successes]
+
+
+def compare_params(method, param, values, periods, true_success_rates='param',
+                   deviation='param', trials_per_period='param',
+                   max_p='param'):
+    variations = []
+    for value in values:
+        if param == 'p_value':
+            variations.append(simulate(method, periods, true_success_rates,
+                                       deviation, trials_per_period, value))
+        elif param == 'trials_per_period':
+            variations.append(simulate(method, periods, true_success_rates,
+                                       deviation, value, max_p))
+    periods = {}
+    if param == 'trials_per_period':
+        for i in range(len(values)):
+            periods[str(values[i])] = [x / values[i] for x in variations[i][0]]
+        periods['max_successes'] = [x / values[0] for x in variations[0][1]]
+    else:
+        for i in range(len(values)):
+            periods[str(values[i])] = variations[i][0]
+        periods['max_successes'] = variations[0][1]
+        periods['base_successes'] = variations[0][2]
+
+    return \
+        {
+            'parameters':
+            {
+                'method': method,
+                'param': param,
+                'values': values,
+                'true_success_rates': true_success_rates,
+                'deviation': deviation,
+                'trials_per_period': trials_per_period,
+                'max_p': max_p
+            },
+            'periods': periods
+        }
+
+
+def compare_methods(periods, true_success_rates, deviation,
+                    trials_per_period, max_p=None):
+
+    split_successes, max_successes, base_successes = \
+        simulate('split', periods, true_success_rates,
+                 deviation, trials_per_period, max_p)
+
+    bandit_successes = simulate('bandit', periods, true_success_rates,
+                                deviation, trials_per_period)[0]
 
     return \
         {
@@ -96,13 +148,14 @@ def experiment(periods, true_success_rates=[0.01, 0.015], deviation=0.0,
             {
                 'true_success_rates': true_success_rates,
                 'deviation': deviation,
-                'trials_per_period': trials_per_period
+                'trials_per_period': trials_per_period,
+                'max_p': max_p
             },
             'totals':
             {
                 'max_successes': max_successes[-1],
-                'split_successes': split.successes.sum(),
-                'bandit_successes': bandit.successes.sum(),
+                'split_successes': split_successes[-1],
+                'bandit_successes': bandit_successes[-1],
                 'base_successes': base_successes[-1]
             },
             'periods':
@@ -111,11 +164,6 @@ def experiment(periods, true_success_rates=[0.01, 0.015], deviation=0.0,
                 'split_successes': split_successes,
                 'bandit_successes': bandit_successes,
                 'base_successes': base_successes
-            },
-            'choosers':
-            {
-                'split': split,
-                'bandit': bandit
             }
         }
 
@@ -137,7 +185,8 @@ def plot(periods, parameters, comparison='absolute'):
         fontsize=12)
     plt.title('true_success_rates: ' + str(parameters['true_success_rates']) +
               ', deviation: ' + str(parameters['deviation']) +
-              ', trials_per_period: ' + str(parameters['trials_per_period']),
+              ', trials_per_period: ' + str(parameters['trials_per_period']) +
+              ', max_p: ' + str(parameters['max_p']),
               fontsize=10)
     plt.xlabel('Periods')
     plt.legend()
