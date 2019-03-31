@@ -2,19 +2,18 @@
 import simulation as sim
 import random
 
-true_rates = [random.uniform(0.01, 0.04) for _ in range(0, 10)]
+true_rates = [random.uniform(0.01, 0.04) for _ in range(0, 50)]
 trials = len(true_rates) * 100
 
-results = sim.compare_methods(periods=7, true_rates=true_rates, deviation=0,
-                              change=0, trials=trials, max_p=0.1)
+results = sim.compare_methods(periods=100, true_rates=[0.01, 0.015],
+                              deviation=0, change=0, trials=2000, max_p=0.1)
 
-results = sim.compare_params(method='split', param='true_rates',
-                             values=[[0.01, 0.015], [0.01, 0.02]],
-                             periods=28, true_rates='param', deviation=0,
+results = sim.compare_params(method='bandit', param='deviation',
+                             values=[0, 0.25, 0.5, 0.75],
+                             periods=28, true_rates=[0.01, 0.015], deviation='param',
                              change=0, trials=2000, max_p=0.1, rounding=False)
 
-sim.plot(results['periods'], results['parameters'],
-         compare='methods', relative=True)
+sim.plot(results['periods'], results['parameters'], relative=False)
 '''
 
 import random
@@ -85,7 +84,7 @@ def add_bandit_results(num_options, trials, rates, bandit, period,
 
 
 def simulate(method, periods, true_rates, deviation, change,
-             trials, max_p=None, rounding=True):
+             trials, max_p, rounding=True):
 
     num_options = len(true_rates)
 
@@ -150,9 +149,8 @@ def simulate(method, periods, true_rates, deviation, change,
     return [successes, max_successes, base_successes]
 
 
-def compare_params(method, param, values, periods, true_rates='param',
-                   deviation='param', change='param', trials='param',
-                   max_p='param', rounding=True):
+def compare_params(method, param, values, periods, true_rates, deviation,
+                   change, trials, max_p, rounding=True):
     results = []
     for value in values:
         if param == 'max_p':
@@ -166,6 +164,10 @@ def compare_params(method, param, values, periods, true_rates='param',
         elif param == 'true_rates':
             successes, optima = simulate(
                 method, periods, value, deviation, change, trials,
+                max_p, rounding)[0:2]
+        elif param == 'deviation':
+            successes, optima = simulate(
+                method, periods, true_rates, value, change, trials,
                 max_p, rounding)[0:2]
         # Devide successes by optima for relative comparison independent from
         # param values (absolute values will not be returned)
@@ -222,7 +224,7 @@ def compare_methods(periods, true_rates, deviation, change,
         }
 
 
-def plot(periods, parameters, compare='methods', relative=False):
+def plot(periods, parameters, relative=False):
     x = np.linspace(1, len(periods['max_successes']),
                     len(periods['max_successes']))
     if relative:
@@ -234,7 +236,8 @@ def plot(periods, parameters, compare='methods', relative=False):
         for graph in list(periods):
             plt.plot(x, periods[graph], label=graph)
         plt.ylabel('Cumulatated total number of successes')
-    if compare == 'methods':
+    if isinstance(parameters['true_rates'], list) and len(
+            parameters['true_rates']) > 4:
         plt.title('num_options: ' + str(len(parameters['true_rates'])) +
                   ', true_rates: ' +
                   str(round(min(parameters['true_rates']), 4)) + '..' +
@@ -244,7 +247,7 @@ def plot(periods, parameters, compare='methods', relative=False):
                   ', trials: ' + str(parameters['trials']) +
                   ', max_p: ' + str(parameters['max_p']),
                   fontsize=10)
-    elif compare == 'params':
+    else:
         plt.title('true_rates: ' + str(parameters['true_rates']) +
                   ', deviation: ' + str(parameters['deviation']) +
                   ', change: ' + str(parameters['change']) +
