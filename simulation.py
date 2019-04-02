@@ -5,15 +5,17 @@ import random
 true_rates = [random.uniform(0.01, 0.04) for _ in range(0, 50)]
 trials = len(true_rates) * 100
 
-results = sim.compare_methods(periods=100, true_rates=[0.01, 0.015],
-                              deviation=0, change=0, trials=2000, max_p=0.1)
+results = sim.compare_methods(
+    periods=28, true_rates=true_rates,
+    deviation=0.5, change=0, trials=trials, max_p=0.1)
 
-results = sim.compare_params(method='bandit', param='deviation',
-                             values=[0, 0.25, 0.5, 0.75],
-                             periods=28, true_rates=[0.01, 0.015], deviation='param',
-                             change=0, trials=2000, max_p=0.1, rounding=False)
+results = sim.compare_params(
+    method='bandit', param='deviation',
+    values=[0, 0.25, 0.5, 0.75],
+    periods=28, true_rates=[0.01, 0.015], deviation='param',
+    change=0, trials=2000, max_p=0.1, rounding=True)
 
-sim.plot(results['periods'], results['parameters'], relative=False)
+sim.plot(results['periods'], results['parameters'], relative=True)
 '''
 
 import random
@@ -84,7 +86,7 @@ def add_bandit_results(num_options, trials, rates, bandit, period,
 
 
 def simulate(method, periods, true_rates, deviation, change,
-             trials, max_p, rounding=True):
+             trials, max_p=None, rounding=True):
 
     num_options = len(true_rates)
 
@@ -104,9 +106,9 @@ def simulate(method, periods, true_rates, deviation, change,
     base_successes = []
     for period in range(periods):
         # Calculate success rates under uncertainty (with deviation)
-        rates = [np.random.RandomState(period).normal(
+        rates = [max(np.random.RandomState((i+1)*(period+1)).normal(
             loc=rate * rate_changes[i] ** period,
-            scale=rate * rate_changes[i] ** period * deviation)
+            scale=rate * rate_changes[i] ** period * deviation), 0)
                  for i, rate in enumerate(true_rates)]
 
         # Add results to Split or Bandit
