@@ -13,7 +13,7 @@ class Bandit():
         self.trials[option_id] = self.trials[option_id] + trials
         self.successes[option_id] = self.successes[option_id] + successes
 
-    def choose_option(self):
+    def choose_options(self, choices):
         sampled_theta = []
         for i in range(self.num_options):
             # Construct beta distribution for each option's success
@@ -21,14 +21,16 @@ class Bandit():
                         self.prior[1] + self.trials[i] - self.successes[i])
             # Draw one sample from beta distribution
             sampled_theta += [dist.rvs()]
-        # Return the index of the sample with the largest value
-        return sampled_theta.index(max(sampled_theta))
+        # Return the indices of the samples with the largest values
+        return [idx for (idx, theta) in sorted(
+            enumerate(sampled_theta), key=lambda x: x[1])[-choices:]]
 
-    def repeat_choice(self, repetitions):
+    def repeat_choice(self, choices=1, repetitions=100):
         # Initialize option_counts array with zeros
         option_counts = np.zeros(shape=(self.num_options,), dtype=int)
         # Choose best option and increment it's count value
         for _ in range(repetitions):
-            option = self.choose_option()
-            option_counts[option] += 1
+            options = self.choose_options(choices=choices)
+            for option in options:
+                option_counts[option] += 1
         return option_counts

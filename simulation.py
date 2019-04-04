@@ -6,14 +6,14 @@ true_rates = [random.uniform(0.01, 0.04) for _ in range(0, 50)]
 trials = len(true_rates) * 100
 
 results = sim.compare_methods(
-    periods=28, true_rates=true_rates,
-    deviation=0.5, change=0, trials=trials, max_p=0.1)
+    periods=28, true_rates=true_rates, deviation=0.5, change=0,
+    trials=trials, max_p=0.1, rounding=True, accelerate=True)
 
 results = sim.compare_params(
-    method='bandit', param='deviation',
-    values=[0, 0.25, 0.5, 0.75],
-    periods=28, true_rates=[0.01, 0.015], deviation='param',
-    change=0, trials=2000, max_p=0.1, rounding=True)
+    method='bandit', param='true_rates',
+    values=[[0.01, 0.012], [0.01, 0.014], [0.01, 0.016], [0.01, 0.018]],
+    periods=28, true_rates='param', deviation=0,
+    change=0, trials=2000, max_p=0.1, rounding=True, accelerate=True)
 
 sim.plot(results['periods'], results['parameters'], relative=True)
 '''
@@ -59,7 +59,7 @@ def add_split_results(trials, max_p, rates, split, period, rounding=True):
 
 
 def add_bandit_results(num_options, trials, rates, bandit, period,
-                       rounding=True):
+                       rounding=True, accelerate=True):
     if period == 0:
         for j in range(num_options):
             if rounding:
@@ -71,7 +71,14 @@ def add_bandit_results(num_options, trials, rates, bandit, period,
                     j, trials / num_options,
                     trials / num_options * rates[j])
     else:
-        option_shares = bandit.repeat_choice(repetitions=100) / 100
+        if accelerate:
+            choices = int(np.sqrt(bandit.num_options))
+            repetitions = int(bandit.num_options / choices) + 2
+        else:
+            choices = 1
+            repetitions = 100
+        option_shares = bandit.repeat_choice(choices, repetitions) \
+            / (choices * repetitions)
         for j in range(num_options):
             if rounding:
                 bandit.add_results(
@@ -86,7 +93,7 @@ def add_bandit_results(num_options, trials, rates, bandit, period,
 
 
 def simulate(method, periods, true_rates, deviation, change,
-             trials, max_p=None, rounding=True):
+             trials, max_p=None, rounding=True, accelerate=True):
 
     num_options = len(true_rates)
 
@@ -119,7 +126,7 @@ def simulate(method, periods, true_rates, deviation, change,
         elif method == 'bandit':
             successes.append(add_bandit_results(
                 num_options, trials, rates,
-                chooser, period, rounding))
+                chooser, period, rounding, accelerate))
 
         # Add results to max and base successes
         if period == 0:
@@ -152,25 +159,25 @@ def simulate(method, periods, true_rates, deviation, change,
 
 
 def compare_params(method, param, values, periods, true_rates, deviation,
-                   change, trials, max_p, rounding=True):
+                   change, trials, max_p, rounding=True, accelerate=True):
     results = []
     for value in values:
         if param == 'max_p':
             successes, optima = simulate(
                 method, periods, true_rates, deviation, change,
-                trials, value, rounding)[0:2]
+                trials, value, rounding, accelerate)[0:2]
         elif param == 'trials':
             successes, optima = simulate(
                 method, periods, true_rates, deviation, change,
-                value, max_p, rounding)[0:2]
+                value, max_p, rounding, accelerate)[0:2]
         elif param == 'true_rates':
             successes, optima = simulate(
-                method, periods, value, deviation, change, trials,
-                max_p, rounding)[0:2]
+                method, periods, value, deviation, change,
+                trials, max_p, rounding, accelerate)[0:2]
         elif param == 'deviation':
             successes, optima = simulate(
                 method, periods, true_rates, value, change, trials,
-                max_p, rounding)[0:2]
+                max_p, rounding, accelerate)[0:2]
         # Devide successes by optima for relative comparison independent from
         # param values (absolute values will not be returned)
         results.append([suc / opt for suc, opt in zip(successes, optima)])
@@ -198,13 +205,14 @@ def compare_params(method, param, values, periods, true_rates, deviation,
 
 
 def compare_methods(periods, true_rates, deviation, change,
-                    trials, max_p):
+                    trials, max_p, rounding=True, accelerate=True):
 
     split_successes, max_successes, base_successes = simulate(
-        'split', periods, true_rates, deviation, change, trials, max_p)
+        'split', periods, true_rates, deviation, change,
+        trials, max_p, rounding)
 
-    bandit_successes = simulate('bandit', periods, true_rates,
-                                deviation, change, trials)[0]
+    bandit_successes = simulate('bandit', periods, true_rates, deviation,
+                                change, trials, rounding, accelerate)[0]
 
     return \
         {
