@@ -6,14 +6,16 @@ true_rates = [random.uniform(0.01, 0.04) for _ in range(0, 50)]
 trials = len(true_rates) * 100
 
 results = sim.compare_methods(
-    periods=28, true_rates=true_rates, deviation=0.5, change=0,
-    trials=trials, max_p=0.1, rounding=True, accelerate=True)
+    periods=28, true_rates=true_rates, deviation=0.5, change=0.05,
+    trials=trials, max_p=0.1, rounding=True, accelerate=True,
+    memory=True, shape='linear', cutoff=28)
 
 results = sim.compare_params(
-    method='bandit', param='true_rates',
-    values=[[0.01, 0.012], [0.01, 0.014], [0.01, 0.016], [0.01, 0.018]],
-    periods=28, true_rates='param', deviation=0,
-    change=0, trials=2000, max_p=0.1, rounding=True, accelerate=True)
+    method='bandit', param='shape',
+    values=['constant', 'linear', 'degressive', 'progressive'],
+    periods=28, true_rates=true_rates, deviation=0.5, change=0.05,
+    trials=trials, max_p=0.1, rounding=True, accelerate=True,
+    memory=False, shape='param', cutoff=28)
 
 sim.plot(results['periods'], results['parameters'], relative=True)
 '''
@@ -93,7 +95,8 @@ def add_bandit_results(num_options, trials, rates, bandit, period,
 
 
 def simulate(method, periods, true_rates, deviation, change,
-             trials, max_p=None, rounding=True, accelerate=True):
+             trials, max_p=None, rounding=True, accelerate=True,
+             memory=False, shape='constant', cutoff=28):
 
     num_options = len(true_rates)
 
@@ -104,7 +107,8 @@ def simulate(method, periods, true_rates, deviation, change,
     if method == 'split':
         chooser = spl.Split(num_options=num_options)
     elif method == 'bandit':
-        chooser = ban.Bandit(num_options=num_options)
+        chooser = ban.Bandit(num_options=num_options,
+                             memory=memory, shape=shape, cutoff=cutoff)
 
     # For each period calculate and add successes for methods as well as
     # the optimal (max) and the random choice (base)
@@ -159,25 +163,31 @@ def simulate(method, periods, true_rates, deviation, change,
 
 
 def compare_params(method, param, values, periods, true_rates, deviation,
-                   change, trials, max_p, rounding=True, accelerate=True):
+                   change, trials, max_p, rounding=True, accelerate=True,
+                   memory=False, shape='constant', cutoff=28):
     results = []
     for value in values:
         if param == 'max_p':
             successes, optima = simulate(
-                method, periods, true_rates, deviation, change,
-                trials, value, rounding, accelerate)[0:2]
+                method, periods, true_rates, deviation, change, trials,
+                value, rounding, accelerate, memory, shape, cutoff)[0:2]
         elif param == 'trials':
             successes, optima = simulate(
-                method, periods, true_rates, deviation, change,
-                value, max_p, rounding, accelerate)[0:2]
+                method, periods, true_rates, deviation, change, value,
+                max_p, rounding, accelerate, memory, shape, cutoff)[0:2]
         elif param == 'true_rates':
             successes, optima = simulate(
-                method, periods, value, deviation, change,
-                trials, max_p, rounding, accelerate)[0:2]
+                method, periods, value, deviation, change, trials,
+                max_p, rounding, accelerate, memory, shape, cutoff)[0:2]
         elif param == 'deviation':
             successes, optima = simulate(
                 method, periods, true_rates, value, change, trials,
-                max_p, rounding, accelerate)[0:2]
+                max_p, rounding, accelerate, memory, shape, cutoff)[0:2]
+        elif param == 'shape':
+            memory = True
+            successes, optima = simulate(
+                method, periods, true_rates, deviation, change, trials,
+                max_p, rounding, accelerate, memory, value, cutoff)[0:2]
         # Devide successes by optima for relative comparison independent from
         # param values (absolute values will not be returned)
         results.append([suc / opt for suc, opt in zip(successes, optima)])
@@ -205,7 +215,8 @@ def compare_params(method, param, values, periods, true_rates, deviation,
 
 
 def compare_methods(periods, true_rates, deviation, change,
-                    trials, max_p, rounding=True, accelerate=True):
+                    trials, max_p, rounding=True, accelerate=True,
+                    memory=False, shape='constant', cutoff=28):
 
     split_successes, max_successes, base_successes = simulate(
         'split', periods, true_rates, deviation, change,
