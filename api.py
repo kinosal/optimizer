@@ -1,7 +1,9 @@
 from io import StringIO
 from flask import Flask, request
+import numpy as np
 import pandas as pd
-import choosing
+import process
+import bandit as ban
 
 
 app = Flask(__name__)
@@ -15,16 +17,13 @@ def ping():
 @app.route('/csv/ads', methods=['GET', 'POST'])
 def ads_form():
     if request.method == 'POST':
-        if request.form['budget']:
-            repetitions = min(int(request.form['budget']), 100)
-        else:
-            repetitions = 100
         data = pd.read_csv(StringIO(request.form['ads']))
-        choices = choose(data=data, repetitions=repetitions)
-        choices.columns = ['Ad ID', 'Ad Set ID', 'Campaign ID', 'Ad Status']
-        choices.replace(True, 'ACTIVE', inplace=True)
-        choices.replace(False, 'PAUSED', inplace=True)
-        return choices.to_csv(index=False, header=True,
+        options = choose(data=data, purchase_factor=10,
+                         formatted=False, onoff=True)
+        options.columns = ['Ad ID', 'Ad Set ID', 'Campaign ID', 'Ad Status']
+        options.replace(True, 'ACTIVE', inplace=True)
+        options.replace(False, 'PAUSED', inplace=True)
+        return options.to_csv(index=False, header=True,
                               line_terminator='<br>', sep='\t')
 
     return '''<form method="POST">
@@ -39,23 +38,32 @@ def ads_form():
 
 @app.route('/ads', methods=['POST'])
 def ads():
-    if 'budget' in request.args:
-        repetitions = min(int(request.args['budget']), 100)
-    else:
-        repetitions = 100
     data = pd.DataFrame(request.json)
-    choices = choose(data=data, repetitions=repetitions)
-    return choices.to_json(orient='records')
+    options = choose(data=data, purchase_factor=10, formatted=False)
+    return options.to_json(orient='records')
 
 
-def choose(data, purchase_factor=10, repetitions=100,
-           formatted=False, onoff=True):
+def choose(data, purchase_factor=10, formatted=False, onoff=True):
     if not formatted:
-        data = choosing.import_facebook(data, purchase_factor)
-    [options, data] = choosing.process(data)
-    bandit = choosing.BetaBandit(options)
-    bandit.bulk_add_results(data)
-    return bandit.choices(options, repetitions, onoff)
+        data = process.facebook(data, purchase_factor)
+    [options, data] = process.add_option_id(data)
+    data = process.add_distance(data)
+    bandit = ban.Bandit(num_options=len(options), memory=False,
+                        shape='constant', cutoff=28)
+    for i in range(len(data)):
+        bandit.add_results(option_id=data.iloc[i]['option_id'],
+                           trials=data.iloc[i]['trials'],
+                           successes=data.iloc[i]['successes'])
+    choices = int(np.sqrt(bandit.num_options))
+    repetitions = int(bandit.num_options / choices) + 2
+    shares = bandit.repeat_choice(choices, repetitions) \
+        / (choices * repetitions)
+    if onoff:
+        status = (shares > 0)
+        options['status'] = status.tolist()
+    else:
+        options['share'] = shares.tolist()
+    return options
 
 
 if __name__ == '__main__':

@@ -79,18 +79,15 @@ def add_bandit_results(num_options, trials, rates, bandit, period,
         else:
             choices = 1
             repetitions = 100
-        option_shares = bandit.repeat_choice(choices, repetitions) \
+        shares = bandit.repeat_choice(choices, repetitions) \
             / (choices * repetitions)
         for j in range(num_options):
             if rounding:
-                bandit.add_results(
-                    j, round(trials * option_shares[j]),
-                    round(trials * option_shares[j] *
-                          rates[j]))
+                bandit.add_results(j, round(trials * shares[j]),
+                                   round(trials * shares[j] * rates[j]))
             else:
-                bandit.add_results(
-                    j, trials * option_shares[j],
-                    trials * option_shares[j] * rates[j])
+                bandit.add_results(j, trials * shares[j],
+                                   trials * shares[j] * rates[j])
     return bandit.successes.sum()
 
 
