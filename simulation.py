@@ -125,6 +125,8 @@ def simulate(method, periods, true_rates, deviation, change,
                 trials, max_p, rates,
                 chooser, period, rounding))
         elif method == 'bandit':
+            if memory:
+                bandit.add_period()
             successes.append(add_bandit_results(
                 num_options, trials, rates,
                 chooser, period, rounding, accelerate))

@@ -29,10 +29,10 @@ def facebook(data, purchase_factor):
     return data
 
 
-def add_option_id(data):
+def reindex_options(data):
     """
     Process dataframe with ad-, adset-, campaign id, date, trials, successes;
-    return dataframe with new option id column
+    return options and dataframe with new option id column
     """
     options = data[['ad_id', 'adset_id', 'campaign_id']] \
         .drop_duplicates().reset_index().drop('index', axis='columns')
@@ -43,7 +43,7 @@ def add_option_id(data):
     return [options, data]
 
 
-def add_distance(data):
+def add_days(data):
     """
     Process dataframe with ad-, adset-, campaign id, date, trials, successes;
     return dataframe with new days_ago column
@@ -51,5 +51,5 @@ def add_distance(data):
     data['date'] = pd.to_datetime(data['date'], format='%Y-%m-%d').dt.date
     data['days_ago'] = 0
     for i in range(len(data)):
-        data.at[i, 'days_ago'] = (date.today() - data.iloc[i]['date']).days
+        data.at[i, 'days'] = (date.today() - data.iloc[i]['date']).days
     return data

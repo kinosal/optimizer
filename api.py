@@ -2,7 +2,7 @@ from io import StringIO
 from flask import Flask, request
 import numpy as np
 import pandas as pd
-import process
+import process as pro
 import bandit as ban
 
 
@@ -14,12 +14,58 @@ def ping():
     return 'Server is here'
 
 
-@app.route('/csv/ads', methods=['GET', 'POST'])
-def ads_form():
+@app.route('/json', methods=['POST'])
+def json():
+    data = pd.DataFrame(request.json)
+    data = pro.facebook(data, purchase_factor=10)
+    [options, data] = pro.reindex_options(data)
+    data = pro.add_days(data)
+    bandit = add_daily_results(data, num_options=len(options),
+                               memory=True, shape='linear', cutoff=28)
+    shares = choose(bandit=bandit)
+    options = format_results(options, shares, onoff=False)
+    return options.to_json(orient='records')
+
+
+@app.route('/form', methods=['GET', 'POST'])
+def form():
+    if request.method == 'POST':
+        entries = [value for value in list(request.form.values()) if value]
+        num_options = int(len(entries) / 2)
+        options = pd.DataFrame(
+            [{'option': str(i+1)} for i in range(num_options)])
+        trials = [int(entries[i*2]) for i in range(num_options)]
+        successes = [int(entries[i*2+1]) for i in range(num_options)]
+        bandit = ban.Bandit(num_options=num_options, memory=False)
+        for i in range(num_options):
+            bandit.add_results(option_id=i, trials=trials[i],
+                               successes=successes[i])
+        shares = choose(bandit=bandit)
+        options = format_results(options, shares, onoff=False)
+        return options.to_json(orient='records')
+
+    return '''<form method="POST">
+                  <input name="trials_1" type="number" min="1" step="1" placeholder="trials_1" />
+                  <input name="successes_1" type="number" min="1" step="1" placeholder="successes_1" />
+                  <br>
+                  <input name="trials_2" type="number" min="1" step="1" placeholder="trials_2" />
+                  <input name="successes_2" type="number" min="1" step="1" placeholder="successes_2" />
+                  <br>
+                  <input type="submit" value="Submit"><br>
+              </form>'''
+
+
+@app.route('/csv', methods=['GET', 'POST'])
+def csv():
     if request.method == 'POST':
         data = pd.read_csv(StringIO(request.form['ads']))
-        options = choose(data=data, purchase_factor=10,
-                         formatted=False, onoff=True)
+        data = pro.facebook(data, purchase_factor=10)
+        [options, data] = pro.reindex_options(data)
+        data = pro.add_days(data)
+        bandit = add_daily_results(data, num_options=len(options),
+                                   memory=True, shape='linear', cutoff=28)
+        shares = choose(bandit=bandit)
+        options = format_results(options, shares, onoff=True)
         options.columns = ['Ad ID', 'Ad Set ID', 'Campaign ID', 'Ad Status']
         options.replace(True, 'ACTIVE', inplace=True)
         options.replace(False, 'PAUSED', inplace=True)
@@ -36,28 +82,26 @@ def ads_form():
               </form>'''
 
 
-@app.route('/ads', methods=['POST'])
-def ads():
-    data = pd.DataFrame(request.json)
-    options = choose(data=data, purchase_factor=10, formatted=False)
-    return options.to_json(orient='records')
+def add_daily_results(data, num_options, memory, shape, cutoff):
+    bandit = ban.Bandit(num_options, memory, shape, cutoff)
+    for _, group in data.groupby('date'):
+        bandit.add_period()
+        for i in range(len(group)):
+            bandit.add_results(option_id=group.iloc[i]['option_id'],
+                               trials=group.iloc[i]['trials'],
+                               successes=group.iloc[i]['successes'])
+    return bandit
 
 
-def choose(data, purchase_factor=10, formatted=False, onoff=True):
-    if not formatted:
-        data = process.facebook(data, purchase_factor)
-    [options, data] = process.add_option_id(data)
-    data = process.add_distance(data)
-    bandit = ban.Bandit(num_options=len(options), memory=False,
-                        shape='constant', cutoff=28)
-    for i in range(len(data)):
-        bandit.add_results(option_id=data.iloc[i]['option_id'],
-                           trials=data.iloc[i]['trials'],
-                           successes=data.iloc[i]['successes'])
+def choose(bandit):
     choices = int(np.sqrt(bandit.num_options))
     repetitions = int(bandit.num_options / choices) + 2
     shares = bandit.repeat_choice(choices, repetitions) \
         / (choices * repetitions)
+    return shares
+
+
+def format_results(options, shares, onoff):
     if onoff:
         status = (shares > 0)
         options['status'] = status.tolist()

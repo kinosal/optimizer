@@ -15,17 +15,18 @@ class Bandit():
             self.shape = shape
             self.cutoff = cutoff
 
+    def add_period(self):
+        self.periods['trials'].append(
+            np.zeros(shape=(self.num_options,), dtype=int))
+        self.periods['successes'].append(
+            np.zeros(shape=(self.num_options,), dtype=int))
+
     def add_results(self, option_id, trials, successes):
-        self.trials[option_id] = self.trials[option_id] + trials
-        self.successes[option_id] = self.successes[option_id] + successes
+        self.trials[option_id] += trials
+        self.successes[option_id] += successes
         if self.memory:
-            if option_id == 0:
-                self.periods['trials'].append(
-                    np.zeros(shape=(self.num_options,), dtype=int))
-                self.periods['successes'].append(
-                    np.zeros(shape=(self.num_options,), dtype=int))
-            self.periods['trials'][-1][option_id] = trials
-            self.periods['successes'][-1][option_id] = successes
+            self.periods['trials'][-1][option_id] += trials
+            self.periods['successes'][-1][option_id] += successes
 
     def weigh_options(self):
         trial_weights = np.zeros(shape=(self.num_options,), dtype=float)
