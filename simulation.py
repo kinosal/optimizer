@@ -2,7 +2,7 @@
 import simulation as sim
 import random
 
-true_rates = [random.uniform(0.01, 0.04) for _ in range(0, 50)]
+true_rates = [random.uniform(0.01, 0.04) for _ in range(0, 25)]
 trials = len(true_rates) * 100
 
 results = sim.compare_methods(
@@ -126,7 +126,7 @@ def simulate(method, periods, true_rates, deviation, change,
                 chooser, period, rounding))
         elif method == 'bandit':
             if memory:
-                bandit.add_period()
+                chooser.add_period()
             successes.append(add_bandit_results(
                 num_options, trials, rates,
                 chooser, period, rounding, accelerate))

@@ -6,9 +6,9 @@ from scipy.stats import chi2_contingency
 class Split():
     def __init__(self, num_options):
         self.num_options = num_options
-        self.trials = np.zeros(shape=(self.num_options,), dtype=float)
-        self.successes = np.zeros(shape=(self.num_options,), dtype=float)
-        self.failures = np.zeros(shape=(self.num_options,), dtype=float)
+        self.trials = np.zeros(shape=(self.num_options,), dtype=int)
+        self.successes = np.zeros(shape=(self.num_options,), dtype=int)
+        self.failures = np.zeros(shape=(self.num_options,), dtype=int)
         self.p_value = 1.0
 
     def add_results(self, option_id, trials, successes):
