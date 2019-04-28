@@ -7,8 +7,7 @@ trials = len(true_rates) * 100
 
 results = sim.compare_methods(
     periods=28, true_rates=true_rates, deviation=0.5, change=0.05,
-    trials=trials, max_p=0.1, rounding=True, accelerate=True,
-    memory=True, shape='linear', cutoff=28)
+    trials=trials, max_p=0.1, rounding=True, accelerate=True)
 
 results = sim.compare_params(
     method='bandit', param='shape',
@@ -17,10 +16,18 @@ results = sim.compare_params(
     trials=trials, max_p=0.1, rounding=True, accelerate=True,
     memory=False, shape='param', cutoff=28)
 
+results = sim.compare_params(
+    method='bandit', param='accelerate',
+    values=[False, True],
+    periods=28, true_rates=true_rates, deviation=0, change=0,
+    trials=trials, max_p=0.1, rounding=True, accelerate='param',
+    memory=False, shape='linear', cutoff=28)
+
 sim.plot(results['periods'], results['parameters'], relative=True)
 '''
 
 import random
+import math
 import numpy as np
 import matplotlib
 matplotlib.use('TkAgg')
@@ -29,53 +36,61 @@ import split as spl
 import bandit as ban
 
 
-def add_split_results(trials, max_p, rates, split, period, rounding=True):
+def add_split_results(trials, max_p, rates, split, period, rounding):
+    """
+    Add period results for best options if p-value <= max_p
+    else for all active options (not previously removed);
+    return cumulated successes
+    """
     if split.p_value > max_p / (period + 1):
         active_options = np.where(split.trials == max(split.trials))[0]
         for option_id in active_options:
             if rounding:
                 split.add_results(
                     option_id, round(trials / len(active_options)),
-                    round(trials / len(active_options) *
-                          rates[option_id]))
+                    round(trials / len(active_options) * rates[option_id]))
             else:
                 split.add_results(
                     option_id, trials / len(active_options),
-                    trials / len(active_options) *
-                    rates[option_id])
+                    trials / len(active_options) * rates[option_id])
     else:
         best_options = np.where(split.successes == max(split.successes))[0]
         for option_id in best_options:
             if rounding:
                 split.add_results(
                     option_id, round(trials / len(best_options)),
-                    round(trials / len(best_options) *
-                          rates[option_id]))
+                    round(trials / len(best_options) * rates[option_id]))
             else:
                 split.add_results(
                     option_id, trials / len(best_options),
-                    trials / len(best_options) *
-                    rates[option_id])
+                    trials / len(best_options) * rates[option_id])
     split.calculate_p_value()
     return split.successes.sum()
 
 
 def add_bandit_results(num_options, trials, rates, bandit, period,
-                       rounding=True, accelerate=True):
+                       rounding, accelerate):
+    """
+    Choose best options (except in first period) and
+    add respective period results;
+    return cumulated successes
+    """
     if period == 0:
         for j in range(num_options):
             if rounding:
-                bandit.add_results(
-                    j, round(trials / num_options),
-                    round(trials / num_options * rates[j]))
+                bandit.add_results(j, round(trials / num_options),
+                                   round(trials / num_options * rates[j]))
             else:
-                bandit.add_results(
-                    j, trials / num_options,
-                    trials / num_options * rates[j])
+                bandit.add_results(j, trials / num_options,
+                                   trials / num_options * rates[j])
     else:
+        # By default choose one best option at a time and
+        # repeat 100 times per period;
+        # accelerate by picking root(num_options) > 1 best options
+        # for each repetition (round up repetitions for higher accuracy)
         if accelerate:
             choices = int(np.sqrt(bandit.num_options))
-            repetitions = int(bandit.num_options / choices) + 2
+            repetitions = math.ceil(bandit.num_options / choices)
         else:
             choices = 1
             repetitions = 100
@@ -94,7 +109,10 @@ def add_bandit_results(num_options, trials, rates, bandit, period,
 def simulate(method, periods, true_rates, deviation, change,
              trials, max_p=None, rounding=True, accelerate=True,
              memory=False, shape='constant', cutoff=28):
-
+    """
+    Simulate option choosing and results adding for n periods
+    and a given chooser, return respective successes with optimum and base
+    """
     num_options = len(true_rates)
 
     rate_changes = [random.uniform(1 - change, 1 + change)
@@ -140,20 +158,17 @@ def simulate(method, periods, true_rates, deviation, change,
                      for i in range(num_options)])]
             else:
                 max_successes = [trials * max(rates)]
-                base_successes = [np.sum(
-                    [trials / num_options * rates[i]
-                     for i in range(num_options)])]
+                base_successes = [np.sum([trials / num_options * rates[i]
+                                          for i in range(num_options)])]
         else:
             if rounding:
-                max_successes.append(
-                    max_successes[-1] +
-                    round(trials * max(rates)))
+                max_successes.append(max_successes[-1] +
+                                     round(trials * max(rates)))
                 base_successes.append(base_successes[-1] + np.sum([
                     round(trials / num_options * rates[i])
                     for i in range(num_options)]))
             else:
-                max_successes.append(max_successes[-1] +
-                                     trials * max(rates))
+                max_successes.append(max_successes[-1] + trials * max(rates))
                 base_successes.append(base_successes[-1] + np.sum([
                     trials / num_options * rates[i]
                     for i in range(num_options)]))
@@ -164,6 +179,12 @@ def simulate(method, periods, true_rates, deviation, change,
 def compare_params(method, param, values, periods, true_rates, deviation,
                    change, trials, max_p, rounding=True, accelerate=True,
                    memory=False, shape='constant', cutoff=28):
+    """
+    Run simulation multiple times with
+    different param values for the same chooser,
+    return dictionary with parameters and periodic values
+    """
+
     results = []
     for value in values:
         if param == 'max_p':
@@ -187,6 +208,10 @@ def compare_params(method, param, values, periods, true_rates, deviation,
             successes, optima = simulate(
                 method, periods, true_rates, deviation, change, trials,
                 max_p, rounding, accelerate, memory, value, cutoff)[0:2]
+        elif param == 'accelerate':
+            successes, optima = simulate(
+                method, periods, true_rates, deviation, change, trials,
+                max_p, rounding, value, memory, shape, cutoff)[0:2]
         # Devide successes by optima for relative comparison independent from
         # param values (absolute values will not be returned)
         results.append([suc / opt for suc, opt in zip(successes, optima)])
@@ -215,6 +240,11 @@ def compare_params(method, param, values, periods, true_rates, deviation,
 
 def compare_methods(periods, true_rates, deviation, change,
                     trials, max_p, rounding=True, accelerate=True):
+    """
+    Run simulation for both choosers,
+    return dictionary with parameters and period vectors with the choosers',
+    optimal and base successes
+    """
 
     split_successes, max_successes, base_successes = simulate(
         'split', periods, true_rates, deviation, change,
@@ -244,6 +274,9 @@ def compare_methods(periods, true_rates, deviation, change,
 
 
 def plot(periods, parameters, relative=False):
+    """
+    Plot periodic results
+    """
     x = np.linspace(1, len(periods['max_successes']),
                     len(periods['max_successes']))
     if relative:
