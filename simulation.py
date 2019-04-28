@@ -214,8 +214,7 @@ def compare_params(method, param, values, periods, true_rates, deviation,
 
 
 def compare_methods(periods, true_rates, deviation, change,
-                    trials, max_p, rounding=True, accelerate=True,
-                    memory=False, shape='constant', cutoff=28):
+                    trials, max_p, rounding=True, accelerate=True):
 
     split_successes, max_successes, base_successes = simulate(
         'split', periods, true_rates, deviation, change,
