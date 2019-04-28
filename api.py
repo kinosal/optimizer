@@ -18,6 +18,14 @@ def ping():
     return 'Server is here'
 
 
+@app.route('/', methods=['GET'])
+def root():
+    """
+    Root page with links to simple and CSV format_results
+    """
+    return '''<a href="/form">Simple Form</a><br><a href="/csv">CSV</a>'''
+
+
 @app.route('/json', methods=['POST'])
 def json():
     """
