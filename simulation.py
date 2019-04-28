@@ -16,13 +16,6 @@ results = sim.compare_params(
     trials=trials, max_p=0.1, rounding=True, accelerate=True,
     memory=False, shape='param', cutoff=28)
 
-results = sim.compare_params(
-    method='bandit', param='accelerate',
-    values=[False, True],
-    periods=28, true_rates=true_rates, deviation=0, change=0,
-    trials=trials, max_p=0.1, rounding=True, accelerate='param',
-    memory=False, shape='linear', cutoff=28)
-
 sim.plot(results['periods'], results['parameters'], relative=True)
 '''
 
