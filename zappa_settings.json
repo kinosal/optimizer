@@ -7,6 +7,8 @@
         "slim_handler": true,
         "s3_bucket": "ad-optimization",
         "aws_region": "eu-west-1",
-        "memory_size": 2048
+        "memory_size": 2048,
+        "certificate_arn": "arn:aws:acm:us-east-1:542632055305:certificate/1152e7b0-1f77-4ecf-9c53-0a202958db80",
+        "domain": "optimizer.stagelink.com"
     }
 }
