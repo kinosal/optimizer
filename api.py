@@ -1,6 +1,6 @@
 from io import StringIO
 import math
-from flask import Flask, request
+from flask import Flask, request, render_template
 import numpy as np
 import pandas as pd
 import process as pro
@@ -23,7 +23,7 @@ def root():
     """
     Root page with links to simple and CSV format_results
     """
-    return '''<a href="/form">Simple Form</a><br><a href="/csv">CSV</a>'''
+    return render_template('index.html')
 
 
 @app.route('/json', methods=['POST'])
@@ -66,15 +66,7 @@ def form():
         options = format_results(options, shares, onoff=False)
         return options.to_json(orient='records')
 
-    return '''<form method="POST">
-                  <input name="trials_1" type="number" min="1" step="1" placeholder="trials_1" />
-                  <input name="successes_1" type="number" min="1" step="1" placeholder="successes_1" />
-                  <br>
-                  <input name="trials_2" type="number" min="1" step="1" placeholder="trials_2" />
-                  <input name="successes_2" type="number" min="1" step="1" placeholder="successes_2" />
-                  <br>
-                  <input type="submit" value="Submit"><br>
-              </form>'''
+    return render_template('form.html')
 
 
 @app.route('/csv', methods=['GET', 'POST'])
@@ -105,15 +97,7 @@ def csv():
         return options.to_csv(index=False, header=True,
                               line_terminator='<br>', sep='\t')
 
-    return '''<form method="POST">
-                  <b>Output format</b><br>
-                  <input type="radio" name="onoff" value="false">Share<br>
-                  <input type="radio" name="onoff" value="true">Active/Paused<br><br>
-                  <b>Ads (CSV)</b><br>
-                  Reporting Starts,Reporting Ends,Ad Name,Ad ID,Campaign Name,Campaign ID,Ad Set Name,Ad Set ID,Impressions,Link Clicks,Purchases<br>
-                  <textarea name="ads" rows="50" cols="100"></textarea><br><br>
-                  <input type="submit" value="Submit"><br>
-              </form>'''
+    return render_template('csv.html')
 
 
 def add_daily_results(data, num_options, memory, shape, cutoff):
