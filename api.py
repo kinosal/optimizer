@@ -64,7 +64,10 @@ def form():
                                successes=successes[i])
         shares = choose(bandit=bandit, accelerate=False)
         options = format_results(options, shares, onoff=False)
-        return options.to_json(orient='records')
+        records = options.to_dict('records')
+        columns = options.columns.values
+        return render_template('form_result.html',
+                               records=records, columns=columns)
 
     return render_template('form.html')
 

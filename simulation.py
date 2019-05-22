@@ -1,8 +1,10 @@
 '''
+Example simulation:
+
 import simulation as sim
 import random
 
-true_rates = [random.uniform(0.01, 0.04) for _ in range(0, 25)]
+true_rates = [random.uniform(0.01, 0.04) for _ in range(0, 50)]
 trials = len(true_rates) * 100
 
 results = sim.compare_methods(
@@ -10,11 +12,11 @@ results = sim.compare_methods(
     trials=trials, max_p=0.1, rounding=True, accelerate=True)
 
 results = sim.compare_params(
-    method='bandit', param='shape',
-    values=['constant', 'linear', 'degressive', 'progressive'],
-    periods=28, true_rates=true_rates, deviation=0.5, change=0.05,
-    trials=trials, max_p=0.1, rounding=True, accelerate=True,
-    memory=False, shape='param', cutoff=28)
+    method='split', param='max_p',
+    values=[0.05, 0.1, 0.15, 0.2],
+    periods=28, true_rates=true_rates, deviation=0.5, change=0,
+    trials=trials, max_p='param', rounding=True, accelerate=True,
+    memory=False, shape='linear', cutoff=28)
 
 sim.plot(results['periods'], results['parameters'], relative=True)
 '''
