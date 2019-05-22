@@ -2,9 +2,7 @@
 {% block content %}
 <div class=container">
   <div>
-    <p>
-      Recommended budget shares for both options for the next period:
-    </p>
+    <p>Recommended budget shares for both options for the next period (based on 100 random drawings from their success rates' beta distributions):</p>
   </div>
   <div>
     <table class="table">
@@ -25,6 +23,12 @@
           {% endfor %}
       </tbody>
     </table>
+  </div>
+  <div>
+    <p>
+      Probability density functions (beta distribution) for both options' success rates:<br>
+      <img src={{ plot }} alt="plot" class="img-fluid">
+    </p>
   </div>
 </div>
 {% endblock %}

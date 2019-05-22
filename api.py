@@ -5,6 +5,8 @@ import numpy as np
 import pandas as pd
 import process as pro
 import bandit as ban
+from scipy.stats import beta
+import matplotlib.pyplot as plt
 
 
 app = Flask(__name__)
@@ -66,8 +68,9 @@ def form():
         options = format_results(options, shares, onoff=False)
         records = options.to_dict('records')
         columns = options.columns.values
-        return render_template('form_result.html',
-                               records=records, columns=columns)
+        save_plot(bandit)
+        return render_template('form_result.html', records=records,
+                               columns=columns, plot='/static/images/plot.png')
 
     return render_template('form.html')
 
@@ -101,6 +104,21 @@ def csv():
                               line_terminator='<br>', sep='\t')
 
     return render_template('csv.html')
+
+
+@app.after_request
+def after_request(response):
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, public, max-age=0"
+    response.headers["Expires"] = 0
+    response.headers["Pragma"] = "no-cache"
+    return response
+
+
+def plot_png():
+    fig = create_figure(bandit)
+    output = BytesIO()
+    FigureCanvas(fig).print_png(output)
+    return Response(output.getvalue(), mimetype='image/png')
 
 
 def add_daily_results(data, num_options, memory, shape, cutoff):
@@ -143,6 +161,21 @@ def format_results(options, shares, onoff):
     else:
         options['share'] = shares.tolist()
     return options
+
+
+def save_plot(bandit):
+    x = np.linspace(0, 1, 100)
+    for i in range(len(bandit.trials)):
+        plt.plot(x, beta.pdf(
+            x, bandit.successes[i], bandit.trials[i] - bandit.successes[i]),
+                 label='option ' + str(i+1))
+    plt.xlabel('Success rate')
+    plt.ylabel('Probablity density')
+    plt.grid()
+    plt.yticks([])
+    plt.legend()
+    plt.savefig('static/images/plot.png')
+    plt.clf()
 
 
 if __name__ == '__main__':
