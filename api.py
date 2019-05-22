@@ -108,17 +108,14 @@ def csv():
 
 @app.after_request
 def after_request(response):
-    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, public, max-age=0"
-    response.headers["Expires"] = 0
-    response.headers["Pragma"] = "no-cache"
+    """
+    Clear server cache after every request to display newest plot image
+    """
+    response.headers['Cache-Control'] = \
+        'no-cache, no-store, must-revalidate, public, max-age=0'
+    response.headers['Expires'] = 0
+    response.headers['Pragma'] = 'no-cache'
     return response
-
-
-def plot_png():
-    fig = create_figure(bandit)
-    output = BytesIO()
-    FigureCanvas(fig).print_png(output)
-    return Response(output.getvalue(), mimetype='image/png')
 
 
 def add_daily_results(data, num_options, memory, shape, cutoff):
