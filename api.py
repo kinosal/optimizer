@@ -3,10 +3,10 @@ import math
 from flask import Flask, request, render_template
 import numpy as np
 import pandas as pd
-import process as pro
-import bandit as ban
 from scipy.stats import beta
 import matplotlib.pyplot as plt
+import process as pro
+import bandit as ban
 
 
 app = Flask(__name__)
@@ -161,6 +161,9 @@ def format_results(options, shares, onoff):
 
 
 def save_plot(bandit):
+    """
+    Save plot with bandit options' PDFs (beta distributions)
+    """
     x = np.linspace(0, 1, 100)
     for i in range(len(bandit.trials)):
         plt.plot(x, beta.pdf(
