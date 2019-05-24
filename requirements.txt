@@ -3,4 +3,5 @@ zappa
 numpy
 pandas
 scipy
+matplotlib
 datetime
