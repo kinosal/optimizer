@@ -32,9 +32,8 @@ function addVariant() {
 }
 
 function check(successes) {
-  let option = successes.name[successes.name.length - 1]
-  let trials = document.getElementsByName('trials_' + option)[0].value
-  if (successes.value > trials) {
+  let trials = successes.parentElement.parentElement.children[0].children[0];
+  if (parseInt(successes.value) > parseInt(trials.value)) {
    successes.setCustomValidity('Successes cannot be greater than trials');
   } else {
    successes.setCustomValidity('');
