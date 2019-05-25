@@ -85,7 +85,8 @@ def csv():
 
     if request.method == 'POST':
         data = pd.read_csv(StringIO(request.form['ads']))
-        data = pro.facebook(data, purchase_factor=10)
+        data = pro.facebook(data, int(request.form['click_weight']),
+                            int(request.form['purchase_weight']))
         [options, data] = pro.reindex_options(data)
         data = pro.add_days(data)
         bandit = add_daily_results(data, num_options=len(options),

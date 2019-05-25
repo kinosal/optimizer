@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 
 
-def facebook(data, purchase_factor):
+def facebook(data, click_weight, purchase_weight):
     """
     Process dataframe from Facebook CSV with Ad-, Ad Set-, Campaign ID,
     Reporting Ends, Impressions, Link Clicks, Purchases;
@@ -15,10 +15,10 @@ def facebook(data, purchase_factor):
     data['Impressions'].fillna(value=0, downcast='infer', inplace=True)
     data['Link Clicks'].fillna(value=0, downcast='infer', inplace=True)
     data['Purchases'].fillna(value=0, downcast='infer', inplace=True)
-    # Create successes column as Link Clicks + Purchases * purchase factor,
-    # maximise successes (alpha) to trials = impressions (alpha + beta) for PDF
-    data['successes'] = [min(row['Link Clicks'] +
-                             row['Purchases'] * purchase_factor,
+    # Create successes column as weighted sum of link clicks and purchases
+    # maximise successes to trials = impressions
+    data['successes'] = [min(row['Link Clicks'] * click_weight +
+                             row['Purchases'] * purchase_weight,
                              row['Impressions'])
                          for index, row in data.iterrows()]
     # Extract and rename relevant columns
