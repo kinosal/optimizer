@@ -2,14 +2,19 @@
 {% block content %}
 <div class=container">
   <div>
-    <p>Recommended budget shares for all options for the next period (based on 100 drawings from their success rates' beta distributions):</p>
+    <p>
+      <b>Simple Form</b>
+    </p>
+    <p>
+      Recommended budget shares for all options for the next period (based on 100 drawings from their success rates' beta distributions):
+    </p>
   </div>
   <div>
     <table class="table">
       <thead>
           <tr>
               {% for col in columns %}
-              <th scope="col">{{ col }}</th>
+              <th scope="col"><center>{{ col }}</center></th>
               {% endfor %}
           </tr>
       </thead>

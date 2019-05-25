@@ -10,7 +10,7 @@ This project contains two parts, a simulator and a web app incl. API.
 
 1) Simulator: Defined in simulation.py, consuming split.py and bandit.py (the two competing optimization models)
 
-2) App: Endpoints/routes defined in api.py, consuming bandit.py (optimization model) and process.py (for data pre-processing). HTML views in templates, plot image for form result page saved as static/images/plot.png.
+2) App: Endpoints/routes defined in api.py, consuming bandit.py (optimization model) and process.py (for data pre-processing). HTML views in templates, plot image for form result page saved as static/images/plot.png, JS to add form elements in static/js/form.js.
 
 ## Contribution
 

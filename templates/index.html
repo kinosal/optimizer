@@ -1,7 +1,17 @@
 {% extends "base.html" %}
 {% block content %}
-<center>
-  <a href="/form">Simple Form</a><br>
-  <a href="/csv">CSV</a>
-<center>
+<div class="container">
+  <h4><center>Ad Optimizer</center></h4>
+  <p>
+    <br>Mini-app as add-on to my blog post about <a href="https://medium.com/@nikolasschriefer/when-and-when-not-to-a-b-test-dc6d5355a7ad">When and when not to A/B test</a> consisting of two parts:
+  </p>
+  <ol>
+    <li>
+      <a href="/form">Simple Form</a>: Calculate recommended shares for competing variants using multi-armed bandits
+    </li>
+    <li>
+      <a href="/csv">CSV Upload</a>: Paste Facebook ads to receive CSV with respective recommended states to upload back to Facebook
+    </li>
+  </ol>
+</div>
 {% endblock %}
