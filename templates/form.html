@@ -3,26 +3,30 @@
 <div class=container">
   <div>
     <p>
-      Enter the trial and success numbers for two different options (e.g. ads) and this simple form will return a JSON string with the recommended budget share for each option in the next period.
+      Enter the trial and success numbers for different options (e.g. ads) and this simple form will return the recommended budget share for each option in the next period.
     </p>
   </div>
   <form method="POST">
-    <div class="form-row">
-      <div class="form-group col-md-6">
-        <input class="form-control" name="trials_1" type="number" min="1" step="1" placeholder="Option 1 Trials" required>
+    <div id="form_inputs">
+      <div class="form-row">
+        <div class="form-group col-md-6">
+          <input class="form-control" name="trials_1" type="number" min="1" step="1" placeholder="Option 1 Trials" required>
+        </div>
+        <div class="form-group col-md-6">
+          <input class="form-control" name="successes_1" type="number" min="1" step="1" placeholder="Option 1 Successes" required>
+        </div>
       </div>
-      <div class="form-group col-md-6">
-        <input class="form-control" name="successes_1" type="number" min="1" step="1" placeholder="Option 1 Successes" required>
+      <div class="form-row">
+        <div class="form-group col-md-6">
+          <input class="form-control" name="trials_2" type="number" min="1" step="1" placeholder="Option 2 Trials" required>
+        </div>
+        <div class="form-group col-md-6">
+          <input class="form-control" name="successes_2" type="number" min="1" step="1" placeholder="Option 2 Successes" required>
+        </div>
       </div>
     </div>
-    <div class="form-row">
-      <div class="form-group col-md-6">
-        <input class="form-control" name="trials_2" type="number" min="1" step="1" placeholder="Option 2 Trials" required>
-      </div>
-      <div class="form-group col-md-6">
-        <input class="form-control" name="successes_2" type="number" min="1" step="1" placeholder="Option 2 Successes" required>
-      </div>
-    </div>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/form.js') }}"></script>
+    <button type="button" onclick="addVariant()" class="btn btn-outline-dark">Add Option</button><br><br>
     <button type="submit" class="btn btn-success">Submit</button>
   </form>
 </div>
