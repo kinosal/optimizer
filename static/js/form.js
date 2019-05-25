@@ -1,9 +1,9 @@
 function addVariant() {
   num_options = document.querySelectorAll('.form-row').length;
 
-  var row = document.createElement('div');
-  var col = document.createElement('div');
-  var input = document.createElement('input');
+  let row = document.createElement('div');
+  let col = document.createElement('div');
+  let input = document.createElement('input');
 
   row.setAttribute('class', 'form-row');
   col.setAttribute('class', 'form-group col-md-6');
@@ -12,16 +12,17 @@ function addVariant() {
   input.setAttribute('min', '1');
   input.setAttribute('step', '1');
 
-  var trials = input.cloneNode(true);
+  let trials = input.cloneNode(true);
   trials.setAttribute('name', 'trials_' + (num_options + 1).toString());
   trials.setAttribute('placeholder', 'Option ' + (num_options + 1).toString() + ' Trials');
-  var successes = input.cloneNode(true);
+  let successes = input.cloneNode(true);
   successes.setAttribute('name', 'successes_' + (num_options + 1).toString());
   successes.setAttribute('placeholder', 'Option ' + (num_options + 1).toString() + ' Successes');
+  successes.setAttribute('oninput', 'check(this)')
 
-  var trials_col = col.cloneNode(true);
+  let trials_col = col.cloneNode(true);
   trials_col.appendChild(trials);
-  var success_col = col.cloneNode(true);
+  let success_col = col.cloneNode(true);
   success_col.appendChild(successes);
 
   row.appendChild(trials_col);
@@ -29,3 +30,13 @@ function addVariant() {
 
   document.getElementById('form_inputs').appendChild(row);
 }
+
+function check(successes) {
+  let option = successes.name[successes.name.length - 1]
+  let trials = document.getElementsByName('trials_' + option)[0].value
+  if (successes.value > trials) {
+   successes.setCustomValidity('Successes cannot be greater than trials');
+  } else {
+   successes.setCustomValidity('');
+  }
+ }

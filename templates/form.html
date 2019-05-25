@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
+<script type="text/javascript" src="{{ url_for('static', filename='js/form.js') }}"></script>
 <div class=container">
   <div>
     <p>
@@ -16,7 +17,7 @@
           <input class="form-control" name="trials_1" type="number" min="1" step="1" placeholder="Option 1 Trials" required>
         </div>
         <div class="form-group col-md-6">
-          <input class="form-control" name="successes_1" type="number" min="1" step="1" placeholder="Option 1 Successes" required>
+          <input class="form-control" name="successes_1" type="number" min="1" step="1" placeholder="Option 1 Successes" oninput="check(this)" required>
         </div>
       </div>
       <div class="form-row">
@@ -24,11 +25,10 @@
           <input class="form-control" name="trials_2" type="number" min="1" step="1" placeholder="Option 2 Trials" required>
         </div>
         <div class="form-group col-md-6">
-          <input class="form-control" name="successes_2" type="number" min="1" step="1" placeholder="Option 2 Successes" required>
+          <input class="form-control" name="successes_2" type="number" min="1" step="1" placeholder="Option 2 Successes" oninput="check(this)" required>
         </div>
       </div>
     </div>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/form.js') }}"></script>
     <button type="button" onclick="addVariant()" class="btn btn-outline-dark">Add Option</button><br><br>
     <button type="submit" class="btn btn-success">Submit</button>
   </form>

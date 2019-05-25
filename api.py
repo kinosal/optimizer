@@ -36,7 +36,7 @@ def json():
     return options with suggested budget share for next period
     """
     data = pd.DataFrame(request.json)
-    data = pro.facebook(data, purchase_factor=10)
+    data = pro.facebook(data, click_weight=1, purchase_weight=10)
     [options, data] = pro.reindex_options(data)
     data = pro.add_days(data)
     bandit = add_daily_results(data, num_options=len(options),
