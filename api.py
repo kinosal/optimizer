@@ -23,7 +23,7 @@ def ping():
 @app.route('/', methods=['GET'])
 def root():
     """
-    Root page with links to simple and CSV format_results
+    Root page with links to simple and CSV form
     """
     return render_template('index.html')
 
@@ -49,7 +49,7 @@ def json():
 @app.route('/form', methods=['GET', 'POST'])
 def form():
     """
-    Provide form with cumulated trial and success inputs for two options,
+    Provide form with cumulated trial and success inputs for multiple options,
     return options with suggested budget share for next period
     """
 
