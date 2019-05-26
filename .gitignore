@@ -1,4 +1,5 @@
 .DS_Store
 .env
 *.csv
+zappa_settings.json
 __pycache__
