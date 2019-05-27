@@ -1,6 +1,6 @@
 # Variant Optimizer
 
-Source code for my blog post about [When and when not to A/B test](https://medium.com/@nikolasschriefer/when-and-when-not-to-a-b-test-dc6d5355a7ad)
+Source code for my blog post about [When and when not to A/B test](https://medium.com/@nikolasschriefer/when-and-when-not-to-a-b-test-c901f3ad96d9)
 
 Contains the code to simulate variant testing with Split (A/B) test and multi-armed bandit (Thompson sampling) and provides a simple Python (Flask) web app to demo the bandit method and optimize the ad delivery of a Facebook marketing campaign at [optimizer.stagelink.com](https://optimizer.stagelink.com)
 
