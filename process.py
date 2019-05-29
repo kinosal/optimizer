@@ -9,21 +9,23 @@ def facebook(data, click_weight, purchase_weight):
     Reporting Ends, Impressions, Link Clicks, Purchases;
     return normalized columns for further processing
     """
+    # Standardize column name input format
+    data.columns = [column.lower().replace(" ", "") for column in data.columns]
     # Set empty and NaN Impressions, Link Clicks and Purchases to 0
     # for calculations
     data = data.replace('', np.nan)
-    data['Impressions'].fillna(value=0, downcast='infer', inplace=True)
-    data['Link Clicks'].fillna(value=0, downcast='infer', inplace=True)
-    data['Purchases'].fillna(value=0, downcast='infer', inplace=True)
+    data['impressions'].fillna(value=0, downcast='infer', inplace=True)
+    data['linkclicks'].fillna(value=0, downcast='infer', inplace=True)
+    data['purchases'].fillna(value=0, downcast='infer', inplace=True)
     # Create successes column as weighted sum of link clicks and purchases
     # maximise successes to trials = impressions
-    data['successes'] = [min(row['Link Clicks'] * click_weight +
-                             row['Purchases'] * purchase_weight,
-                             row['Impressions'])
+    data['successes'] = [min(row['linkclicks'] * click_weight +
+                             row['purchases'] * purchase_weight,
+                             row['impressions'])
                          for index, row in data.iterrows()]
     # Extract and rename relevant columns
-    data = data[['Ad ID', 'Ad Set ID', 'Campaign ID',
-                 'Reporting Ends', 'Impressions', 'successes']]
+    data = data[['adid', 'adsetid', 'campaignid',
+                 'reportingends', 'impressions', 'successes']]
     data.columns = ['ad_id', 'adset_id', 'campaign_id',
                     'date', 'trials', 'successes']
     return data
