@@ -32,7 +32,7 @@ def root():
 def json():
     """
     Process Facebook ads JSON with "Ad ID", "Impressions", "Link Clicks"
-    and "Purchases" for multiple periods;
+    and "Purchases" for multiple reporting periods;
     return options with suggested status for next period
     """
     data = pd.DataFrame(request.json)
@@ -42,7 +42,13 @@ def json():
     bandit = add_daily_results(data, num_options=len(options),
                                memory=True, shape='linear', cutoff=28)
     shares = choose(bandit=bandit, accelerate=True)
-    options = format_results(options, shares, onoff=False)
+    onoff = request.args.get('onoff') == 'true'
+    options = format_results(options, shares, onoff=onoff)
+    if onoff:
+        options.replace(True, 'ACTIVE', inplace=True)
+        options.replace(False, 'PAUSED', inplace=True)
+    else:
+        options['ad_share'] = options['ad_share'].round(2)
     return options.to_json(orient='records')
 
 
@@ -79,7 +85,7 @@ def form():
 def csv():
     """
     Provide form to paste Facebook ads CSV with "Ad ID", "Impressions",
-    "Link Clicks" and "Purchases" for multiple periods;
+    "Link Clicks" and "Purchases" for multiple reporting periods;
     return options with suggested budget share or status for next period
     """
 
