@@ -7,6 +7,9 @@ from scipy.stats import beta
 import matplotlib.pyplot as plt
 import process as pro
 import bandit as ban
+import config
+from facebook_business.api import FacebookAdsApi
+from facebook_business.adobjects.ad import Ad
 
 
 app = Flask(__name__)
@@ -49,6 +52,13 @@ def json():
         options.replace(False, 'PAUSED', inplace=True)
     else:
         options['ad_share'] = options['ad_share'].round(2)
+    update = request.args.get('update') == 'true'
+    if update:
+        app_id = config.APP_ID
+        app_secret = config.APP_SECRET
+        access_token = config.ACCESS_TOKEN
+        updated = update_status(app_id, app_secret, access_token, options)
+        return updated.to_json(orient='records')
     return options.to_json(orient='records')
 
 
@@ -98,13 +108,21 @@ def csv():
         bandit = add_daily_results(data, num_options=len(options),
                                    memory=True, shape='linear', cutoff=28)
         shares = choose(bandit=bandit, accelerate=True)
-        onoff = request.form['onoff'] == 'true'
-        options = format_results(options, shares, onoff=onoff)
-        if onoff:
+        output = request.form['output']
+        if output == 'share':
+            options = format_results(options, shares, onoff=False)
+            options['ad_share'] = options['ad_share'].round(2)
+        else:
+            options = format_results(options, shares, onoff=True)
             options.replace(True, 'ACTIVE', inplace=True)
             options.replace(False, 'PAUSED', inplace=True)
-        else:
-            options['ad_share'] = options['ad_share'].round(2)
+        if output == 'update':
+            app_id = request.form['app_id']
+            app_secret = request.form['app_secret']
+            access_token = request.form['access_token']
+            updated = update_status(app_id, app_secret, access_token, options)
+            return updated.to_csv(index=False, header=True,
+                                  line_terminator='<br>', sep='\t')
         return options.to_csv(index=False, header=True,
                               line_terminator='<br>', sep='\t')
 
@@ -181,6 +199,41 @@ def save_plot(bandit):
     plt.legend()
     plt.savefig('static/images/plot.png')
     plt.clf()
+
+
+def update_status(app_id, app_secret, access_token, options):
+    """
+    Update status of ads on Facebook if different from respective suggestion;
+    return dataframe with updated ads
+    """
+    api = FacebookAdsApi.init(app_id, app_secret, access_token)
+    updated = []
+    # Determine number of required batches since
+    # Facebook only allows 50 API calls per batch
+    num_options = len(options.index)
+    batch_size = 50
+    batches = int(num_options / batch_size) + 1
+    # Split options into batches and loop through those
+    i = 0
+    for _ in range(batches):
+        option_batch = options.loc[i:i+batch_size, :]
+        i += batch_size
+        update_batch = api.new_batch()
+        # Loop through options within batch, compare current and suggested
+        # ad status and update if changed
+        for _, row in option_batch.iterrows():
+            ad_id = str(row['ad_id'])
+            ad = Ad(ad_id)
+            ad.api_get(fields=[Ad.Field.status])
+            old_status = ad[Ad.Field.status]
+            new_status = row['ad_status']
+            if old_status != new_status:
+                ad[Ad.Field.status] = new_status
+                updated.append([ad_id, old_status + ' -> ' + new_status])
+                ad.api_update(batch=update_batch, fields=[],
+                              params={Ad.Field.status: new_status})
+        update_batch.execute()
+    return pd.DataFrame(updated, columns=['ad_id', 'updated'])
 
 
 if __name__ == '__main__':
