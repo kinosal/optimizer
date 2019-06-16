@@ -31,9 +31,9 @@ def root():
 @app.route('/json', methods=['POST'])
 def json():
     """
-    Process Facebook ads JSON with "Ad ID", "Adset ID", "Campaign ID",
-    "Impressions", "Link Clicks" and "Purchases" for multiple periods;
-    return options with suggested budget share for next period
+    Process Facebook ads JSON with "Ad ID", "Impressions", "Link Clicks"
+    and "Purchases" for multiple periods;
+    return options with suggested status for next period
     """
     data = pd.DataFrame(request.json)
     data = pro.facebook(data, click_weight=1, purchase_weight=10)
@@ -78,9 +78,9 @@ def form():
 @app.route('/csv', methods=['GET', 'POST'])
 def csv():
     """
-    Provide form to paste Facebook ads CSV with "Ad ID", "Adset ID",
-    "Campaign ID", "Impressions", "Link Clicks" and "Purchases" for multiple
-    periods, return options with share or on/off suggestion for next period
+    Provide form to paste Facebook ads CSV with "Ad ID", "Impressions",
+    "Link Clicks" and "Purchases" for multiple periods;
+    return options with suggested budget share or status for next period
     """
 
     if request.method == 'POST':
@@ -95,12 +95,10 @@ def csv():
         onoff = request.form['onoff'] == 'true'
         options = format_results(options, shares, onoff=onoff)
         if onoff:
-            options.columns = ['Ad ID', 'Ad Set ID', 'Campaign ID', 'Ad Status']
             options.replace(True, 'ACTIVE', inplace=True)
             options.replace(False, 'PAUSED', inplace=True)
         else:
-            options.columns = ['Ad ID', 'Ad Set ID', 'Campaign ID', 'Ad Share']
-            options['Ad Share'] = options['Ad Share'].round(2)
+            options['ad_share'] = options['ad_share'].round(2)
         return options.to_csv(index=False, header=True,
                               line_terminator='<br>', sep='\t')
 
@@ -155,9 +153,9 @@ def format_results(options, shares, onoff):
     """
     if onoff:
         status = (shares > 0)
-        options['status'] = status.tolist()
+        options['ad_status'] = status.tolist()
     else:
-        options['share'] = shares.tolist()
+        options['ad_share'] = shares.tolist()
     return options
 
 
