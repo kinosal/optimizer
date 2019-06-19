@@ -36,10 +36,10 @@ def root():
 def json():
     """
     Process ads JSON with daily breakdown of ad_id, impressions, clicks and
-    conversions; return options with suggested status for next period
+    conversions; return options with suggested status or share for next period
     """
     data = pd.DataFrame(request.json)
-    data = pro.facebook(data, click_weight=1, conversion_weight=10)
+    data = pro.preprocess(data, click_weight=1, conversion_weight=10)
     [options, data] = pro.reindex_options(data)
     data = pro.add_days(data)
     bandit = add_daily_results(data, num_options=len(options),
@@ -47,13 +47,6 @@ def json():
     shares = choose(bandit=bandit, accelerate=True)
     status = request.args.get('status') == 'true'
     options = format_results(options, shares, status=status)
-    update = request.args.get('update') == 'true'
-    if update:
-        app_id = config.APP_ID
-        app_secret = config.APP_SECRET
-        access_token = config.ACCESS_TOKEN
-        updated = update_status(app_id, app_secret, access_token, options)
-        return updated.to_json(orient='records')
     return options.to_json(orient='records')
 
 
@@ -91,7 +84,7 @@ def csv():
     """
     Provide form to paste ads CSV with daily breakdown of ad_id, impressions,
     clicks and conversions; return options with suggested budget share or
-    status for next period
+    status for next period and provide direct upload to Facebook via API
     """
 
     if request.method == 'POST':
@@ -111,7 +104,8 @@ def csv():
                 for record in records[index]:
                     results.loc[len(results)] = \
                         [record['ad_id'], record['ad_status']]
-            updated = update_status(app_id, app_secret, access_token, results)
+            updated = update_facebook(app_id, app_secret, access_token,
+                                      results)
             return updated.to_csv(index=False, header=True,
                                   line_terminator='<br>', sep='\t')
 
@@ -229,7 +223,7 @@ def save_plot(bandit):
     plt.clf()
 
 
-def update_status(app_id, app_secret, access_token, options):
+def update_facebook(app_id, app_secret, access_token, options):
     """
     Update status of ads on Facebook if different from respective suggestion;
     return dataframe with updated ads
