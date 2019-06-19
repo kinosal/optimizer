@@ -2,44 +2,22 @@
 {% block content %}
 <div class=container">
   <div>
-    <p><b>CSV Upload</b></p>
+    <p><b>CSV Import</b></p>
     <p>
-      Paste your <a href="https://www.facebook.com/business/help/849477685213347">Facebook ads export</a> in the below format (daily breakdown) and select your desired output to return all ads and their suggested budget share or state in a tab separated format.
-      In case you would like to instantly update your ad statuses according to the suggestions via the Facebook Marketing API, you need to provide your respective credentials (Facebook App required).
-      You can also adjust the link click and purchase success weights to accomodate your individual use case and strategy.
+      Paste your ad data in the below format and select your desired output to return all ads and their suggested budget share or status.
+      You can also adjust the click and conversion success weights to accomodate your individual use case and strategy.
     </p>
   </div>
   <form method="POST">
     <div class="form-group">
       <b>Output</b>
       <div class="form-check">
-        <input type="radio" class="form-check-input" id="output" name="output" value="state" checked>
-        <label class="form-check-label" for="output1">State (Active/Paused)</label>
+        <input type="radio" class="form-check-input" id="output" name="output" value="status" checked>
+        <label class="form-check-label" for="output1">Status (Active/Paused)</label>
       </div>
       <div class="form-check">
         <input type="radio" class="form-check-input" id="output" name="output" value="share">
         <label class="form-check-label" for="output2">Share</label>
-      </div>
-      <div class="form-check">
-        <input type="radio" class="form-check-input" id="output" name="output" value="update">
-        <label class="form-check-label" for="output3">Instant Update</label>
-      </div>
-    </div>
-    <div class="form-group">
-      <b>Facebook Credentials (required for instant update only)</b><br>
-      <div class="form-row">
-        <div class="form-group col-sm">
-          <label for="app_id">App ID</label>
-          <input class="form-control" name="app_id" type="text">
-        </div>
-        <div class="form-group col-sm">
-          <label for="app_secret">App Secret</label>
-          <input class="form-control" name="app_secret" type="text">
-        </div>
-        <div class="form-group col-sm">
-          <label for="access_token">Access Token</label>
-          <input class="form-control" name="access_token" type="text">
-        </div>
       </div>
     </div>
     <div class="form-group">
@@ -50,15 +28,16 @@
           <input class="form-control" name="click_weight" type="number" min="0" step="1" value="1" required>
         </div>
         <div class="form-group col-md-6">
-          <label for="purchase_weight">Purchase Weight</label>
-          <input class="form-control" name="purchase_weight" type="number" min="0" step="1" value="10" required>
+          <label for="conversion_weight">Conversion Weight</label>
+          <input class="form-control" name="conversion_weight" type="number" min="0" step="1" value="10" required>
         </div>
       </div>
     </div>
     <div class="form-group">
       <label for="ads"><b>Ads (CSV)</b></label>
-      <textarea class="form-control" name="ads" id="ads" rows="10" placeholder="Reporting Starts,Reporting Ends,Ad ID,Impressions,Link Clicks,Purchases" required></textarea>
+      <textarea class="form-control" name="ads" id="ads" rows="10" placeholder="(channel), date (YYYY-MM-DD), ad_id, impressions, clicks, conversions" required></textarea>
     </div>
+    <input type="hidden" name="update" value="false">
     <button type="submit" class="btn btn-success">Submit</button>
   </form>
 </div>

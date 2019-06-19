@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import process as pro
 import bandit as ban
 import config
+import ast
 from facebook_business.api import FacebookAdsApi
 from facebook_business.adobjects.ad import Ad
 
@@ -34,24 +35,18 @@ def root():
 @app.route('/json', methods=['POST'])
 def json():
     """
-    Process Facebook ads JSON with "Ad ID", "Impressions", "Link Clicks"
-    and "Purchases" for multiple reporting periods;
-    return options with suggested status for next period
+    Process ads JSON with daily breakdown of ad_id, impressions, clicks and
+    conversions; return options with suggested status for next period
     """
     data = pd.DataFrame(request.json)
-    data = pro.facebook(data, click_weight=1, purchase_weight=10)
+    data = pro.facebook(data, click_weight=1, conversion_weight=10)
     [options, data] = pro.reindex_options(data)
     data = pro.add_days(data)
     bandit = add_daily_results(data, num_options=len(options),
                                memory=True, shape='linear', cutoff=28)
     shares = choose(bandit=bandit, accelerate=True)
-    onoff = request.args.get('onoff') == 'true'
-    options = format_results(options, shares, onoff=onoff)
-    if onoff:
-        options.replace(True, 'ACTIVE', inplace=True)
-        options.replace(False, 'PAUSED', inplace=True)
-    else:
-        options['ad_share'] = options['ad_share'].round(2)
+    status = request.args.get('status') == 'true'
+    options = format_results(options, shares, status=status)
     update = request.args.get('update') == 'true'
     if update:
         app_id = config.APP_ID
@@ -81,7 +76,7 @@ def form():
             bandit.add_results(option_id=i, trials=trials[i],
                                successes=successes[i])
         shares = choose(bandit=bandit, accelerate=False)
-        options = format_results(options, shares, onoff=False)
+        options = format_results(options, shares, status=False)
         records = options.to_dict('records')
         columns = options.columns.values
         save_plot(bandit)
@@ -94,37 +89,66 @@ def form():
 @app.route('/csv', methods=['GET', 'POST'])
 def csv():
     """
-    Provide form to paste Facebook ads CSV with "Ad ID", "Impressions",
-    "Link Clicks" and "Purchases" for multiple reporting periods;
-    return options with suggested budget share or status for next period
+    Provide form to paste ads CSV with daily breakdown of ad_id, impressions,
+    clicks and conversions; return options with suggested budget share or
+    status for next period
     """
 
     if request.method == 'POST':
-        data = pd.read_csv(StringIO(request.form['ads']))
-        data = pro.facebook(data, int(request.form['click_weight']),
-                            int(request.form['purchase_weight']))
+        if request.form['update'] == 'true':
+            app_id = request.form['app_id']
+            app_secret = request.form['app_secret']
+            access_token = request.form['access_token']
+            channels = ast.literal_eval(request.form['channels'])
+            records = ast.literal_eval(request.form['records'])
+            updatable = ['facebook', 'instagram']
+            indices = []
+            for channel in updatable:
+                if channel in channels:
+                    indices.append(channels.index(channel))
+            results = pd.DataFrame(columns=['ad_id', 'ad_status'])
+            for index in indices:
+                for record in records[index]:
+                    results.loc[len(results)] = \
+                        [record['ad_id'], record['ad_status']]
+            updated = update_status(app_id, app_secret, access_token, results)
+            return updated.to_csv(index=False, header=True,
+                                  line_terminator='<br>', sep='\t')
+
+        data = pd.read_csv(StringIO(request.form['ads']), sep=None)
+        data = pro.preprocess(data, int(request.form['click_weight']),
+                              int(request.form['conversion_weight']))
         [options, data] = pro.reindex_options(data)
         data = pro.add_days(data)
         bandit = add_daily_results(data, num_options=len(options),
                                    memory=True, shape='linear', cutoff=28)
         shares = choose(bandit=bandit, accelerate=True)
+
         output = request.form['output']
-        if output == 'share':
-            options = format_results(options, shares, onoff=False)
-            options['ad_share'] = options['ad_share'].round(2)
-        else:
-            options = format_results(options, shares, onoff=True)
-            options.replace(True, 'ACTIVE', inplace=True)
-            options.replace(False, 'PAUSED', inplace=True)
-        if output == 'update':
-            app_id = request.form['app_id']
-            app_secret = request.form['app_secret']
-            access_token = request.form['access_token']
-            updated = update_status(app_id, app_secret, access_token, options)
-            return updated.to_csv(index=False, header=True,
-                                  line_terminator='<br>', sep='\t')
-        return options.to_csv(index=False, header=True,
-                              line_terminator='<br>', sep='\t')
+        if output == 'status':
+            results = format_results(options, shares, status=True)
+        elif output == 'share':
+            results = format_results(options, shares, status=False).round(2)
+
+        if 'channel' in options.columns:
+            channel_shares = format_results(options, shares, status=False). \
+                groupby('channel')['ad_share'].sum().round(2)
+            channels = []
+            records = []
+            for name, group in results.groupby('channel'):
+                channels.append(name)
+                group = group.drop(['channel'], axis=1)
+                columns = group.columns.values
+                records.append(group.to_dict('records'))
+            return render_template('csv_result_channels.html',
+                                   channels=channels,
+                                   channel_shares=channel_shares,
+                                   records=records, columns=columns)
+
+        records = results.to_dict('records')
+        columns = results.columns.values
+        return render_template('csv_result.html', records=records,
+                               columns=columns)
 
     return render_template('csv.html')
 
@@ -171,16 +195,20 @@ def choose(bandit, accelerate):
     return shares
 
 
-def format_results(options, shares, onoff):
+def format_results(options, shares, status):
     """
-    Return True/False instead of numeric share for options if desired
+    Return ACTIVE/PAUSED instead of numeric share for options if desired
     """
-    if onoff:
+    results = options.copy()
+    if status:
         status = (shares > 0)
-        options['ad_status'] = status.tolist()
+        results['ad_status'] = status.tolist()
+        results.replace(True, 'ACTIVE', inplace=True)
+        results.replace(False, 'PAUSED', inplace=True)
     else:
-        options['ad_share'] = shares.tolist()
-    return options
+        results['ad_share'] = shares.tolist()
+        results['ad_share'] = results['ad_share']
+    return results
 
 
 def save_plot(bandit):

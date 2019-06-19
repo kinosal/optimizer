@@ -3,40 +3,46 @@ import numpy as np
 import pandas as pd
 
 
-def facebook(data, click_weight, purchase_weight):
+def preprocess(data, click_weight, conversion_weight):
     """
-    Process dataframe from Facebook CSV with Ad-, Ad Set-, Campaign ID,
-    Reporting Ends, Impressions, Link Clicks, Purchases;
-    return normalized columns for further processing
+    Prepare dataframe from CSV with channel, date, ad_id, impressions, clicks
+    and conversions for bandit optinmization
     """
     # Standardize column name input format
     data.columns = \
         [column.lower().replace(" ", "_") for column in data.columns]
-    # Set empty and NaN Impressions, Link Clicks and Purchases to 0
+    # Rename columns from Facebook export
+    data.rename(columns={'reporting_ends': 'date'}, inplace=True)
+    data.rename(columns={'link_clicks': 'clicks'}, inplace=True)
+    data.rename(columns={'purchases': 'conversions'}, inplace=True)
+    # Set empty and NaN impressions, clicks and conversions to 0
     # for calculations
     data = data.replace('', np.nan)
     data['impressions'].fillna(value=0, downcast='infer', inplace=True)
-    data['link_clicks'].fillna(value=0, downcast='infer', inplace=True)
-    data['purchases'].fillna(value=0, downcast='infer', inplace=True)
-    # Create successes column as weighted sum of link clicks and purchases
+    data['clicks'].fillna(value=0, downcast='infer', inplace=True)
+    data['conversions'].fillna(value=0, downcast='infer', inplace=True)
+    # Create successes column as weighted sum of clicks and conversions
     # maximise successes to trials = impressions
-    data['successes'] = [min(row['link_clicks'] * click_weight +
-                             row['purchases'] * purchase_weight,
+    data['successes'] = [min(row['clicks'] * click_weight +
+                             row['conversions'] * conversion_weight,
                              row['impressions'])
                          for index, row in data.iterrows()]
-    # Rename relevant columns
-    data.rename(columns={'impressions': 'trials', 'reporting_ends': 'date'},
-                inplace=True)
+    # Rename impressions trials
+    data.rename(columns={'impressions': 'trials'}, inplace=True)
     return data
 
 
 def reindex_options(data):
     """
-    Process dataframe with ad_id, date, trials and successes;
+    Process dataframe with (channel), ad_id, date, trials and successes;
     return options and dataframe with option id column
     """
-    options = data['ad_id'] \
-        .drop_duplicates().reset_index().drop('index', axis='columns')
+    if 'channel' in data.columns:
+        combinations = data[['channel', 'ad_id']]
+    else:
+        combinations = data['ad_id']
+    options = combinations.drop_duplicates().reset_index().drop('index',
+                                                                axis='columns')
     data['option_id'] = 0
     for i in range(len(data)):
         data.at[i, 'option_id'] = options.loc[
