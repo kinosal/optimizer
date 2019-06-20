@@ -23,11 +23,15 @@
     <div class="form-group">
       <b>Success Weights</b><br>
       <div class="form-row">
-        <div class="form-group col-md-6">
-          <label for="click_weight">Click Weight</label>
-          <input class="form-control" name="click_weight" type="number" min="0" step="1" value="1" required>
+        <div class="form-group col-sm">
+          <label for="click_weight">Engagement Weight</label>
+          <input class="form-control" name="engagement_weight" type="number" min="0" step="1" value="1" required>
         </div>
-        <div class="form-group col-md-6">
+        <div class="form-group col-sm">
+          <label for="click_weight">Click Weight</label>
+          <input class="form-control" name="click_weight" type="number" min="0" step="1" value="2" required>
+        </div>
+        <div class="form-group col-sm">
           <label for="conversion_weight">Conversion Weight</label>
           <input class="form-control" name="conversion_weight" type="number" min="0" step="1" value="10" required>
         </div>
@@ -35,7 +39,7 @@
     </div>
     <div class="form-group">
       <label for="ads"><b>Ads (CSV)</b></label>
-      <textarea class="form-control" name="ads" id="ads" rows="10" placeholder="(channel), date (YYYY-MM-DD), ad_id, impressions, clicks, conversions" required></textarea>
+      <textarea class="form-control" name="ads" id="ads" rows="10" placeholder="Channel (optional), Date (YYYY-MM-DD), Ad ID, Impressions, Engagements, Clicks, Conversions" required></textarea>
     </div>
     <input type="hidden" name="update" value="false">
     <button type="submit" class="btn btn-success">Submit</button>

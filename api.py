@@ -35,11 +35,13 @@ def root():
 @app.route('/json', methods=['POST'])
 def json():
     """
-    Process ads JSON with daily breakdown of ad_id, impressions, clicks and
-    conversions; return options with suggested status or share for next period
+    Process ads JSON with daily breakdown of channel (optional), ad_id,
+    impressions, engagements, clicks and conversions;
+    return options with suggested status or share for next period
     """
     data = pd.DataFrame(request.json)
-    data = pro.preprocess(data, click_weight=1, conversion_weight=10)
+    data = pro.preprocess(data, engagement_weight=1, click_weight=2,
+                          conversion_weight=10)
     [options, data] = pro.reindex_options(data)
     data = pro.add_days(data)
     bandit = add_daily_results(data, num_options=len(options),
@@ -82,9 +84,10 @@ def form():
 @app.route('/csv', methods=['GET', 'POST'])
 def csv():
     """
-    Provide form to paste ads CSV with daily breakdown of ad_id, impressions,
-    clicks and conversions; return options with suggested budget share or
-    status for next period and provide direct upload to Facebook via API
+    Provide form to paste ads CSV with daily breakdown of channel (optional),
+    ad_id, impressions, engagements, clicks and conversions;
+    return options with suggested budget share or status for next period and
+    provide direct upload to Facebook via API
     """
 
     if request.method == 'POST':
@@ -110,7 +113,8 @@ def csv():
                                   line_terminator='<br>', sep='\t')
 
         data = pd.read_csv(StringIO(request.form['ads']), sep=None)
-        data = pro.preprocess(data, int(request.form['click_weight']),
+        data = pro.preprocess(data, int(request.form['engagement_weight']),
+                              int(request.form['click_weight']),
                               int(request.form['conversion_weight']))
         [options, data] = pro.reindex_options(data)
         data = pro.add_days(data)
