@@ -109,8 +109,10 @@ def csv():
                         [record['ad_id'], record['ad_status']]
             updated = update_facebook(app_id, app_secret, access_token,
                                       results)
-            return updated.to_csv(index=False, header=True,
-                                  line_terminator='<br>', sep='\t')
+            records = updated.to_dict('records')
+            columns = updated.columns.values
+            return render_template('update_result.html', records=records,
+                                   columns=columns)
 
         data = pd.read_csv(StringIO(request.form['ads']), sep=None)
         data = pro.preprocess(data, int(request.form['engagement_weight']),

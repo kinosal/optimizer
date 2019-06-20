@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<div class=container">
+  <div>
+    <p><b>CSV Import: Facebook Update</b></p>
+  </div>
+  <div>
+    <table class="table">
+      <thead>
+          <tr>
+              {% for col in columns %}
+              <th scope="col"><center>{{ col }}</center></th>
+              {% endfor %}
+          </tr>
+      </thead>
+      <tbody>
+          {% for record in records %}
+          <tr>
+              {% for col in columns %}
+              <td><center>{{ record[col] }}</center></td>
+              {% endfor %}
+          </tr>
+          {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
