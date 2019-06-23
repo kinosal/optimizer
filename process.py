@@ -17,6 +17,8 @@ def preprocess(data, engagement_weight, click_weight, conversion_weight):
     data.rename(columns={'post_engagement': 'engagements'}, inplace=True)
     data.rename(columns={'link_clicks': 'clicks'}, inplace=True)
     data.rename(columns={'purchases': 'conversions'}, inplace=True)
+    if 'reporting_starts' in data.columns:
+        data.drop(['reporting_starts'], axis='columns', inplace=True)
     # Rename columns from Google export
     data.rename(columns={'day': 'date'}, inplace=True)
     # Set empty and NaN impressions, engagements, clicks and conversions to 0
@@ -33,6 +35,8 @@ def preprocess(data, engagement_weight, click_weight, conversion_weight):
                              row['conversions'] * conversion_weight,
                              row['impressions'])
                          for index, row in data.iterrows()]
+    data.drop(['engagements', 'clicks', 'conversions'], axis='columns',
+              inplace=True)
     # Rename impressions trials
     data.rename(columns={'impressions': 'trials'}, inplace=True)
     return data
@@ -40,15 +44,12 @@ def preprocess(data, engagement_weight, click_weight, conversion_weight):
 
 def reindex_options(data):
     """
-    Process dataframe with channel (optional), ad_id, date, trials and successes;
+    Process dataframe with ad_id, date, trials and successes;
     return options and dataframe with option id column
     """
-    if 'channel' in data.columns:
-        combinations = data[['channel', 'ad_id']]
-    else:
-        combinations = data['ad_id']
-    options = combinations.drop_duplicates().reset_index().drop('index',
-                                                                axis='columns')
+    combinations = data.drop(['date', 'trials', 'successes'], axis='columns')
+    options = combinations.drop_duplicates().reset_index() \
+                          .drop('index', axis='columns')
     data['option_id'] = 0
     for i in range(len(data)):
         data.at[i, 'option_id'] = \
