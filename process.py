@@ -3,7 +3,8 @@ import numpy as np
 import pandas as pd
 
 
-def preprocess(data, engagement_weight, click_weight, conversion_weight):
+def preprocess(data, impression_weight, engagement_weight, click_weight,
+               conversion_weight):
     """
     Prepare dataframe from CSV with channel (optional), date, ad_id,
     impressions, engagements, clicks and conversions
@@ -14,6 +15,7 @@ def preprocess(data, engagement_weight, click_weight, conversion_weight):
         [column.lower().replace(" ", "_") for column in data.columns]
     # Rename columns from Facebook export
     data.rename(columns={'reporting_ends': 'date'}, inplace=True)
+    data.rename(columns={'amount_spent_(eur)': 'cost'}, inplace=True)
     data.rename(columns={'post_engagement': 'engagements'}, inplace=True)
     data.rename(columns={'link_clicks': 'clicks'}, inplace=True)
     data.rename(columns={'purchases': 'conversions'}, inplace=True)
@@ -21,24 +23,26 @@ def preprocess(data, engagement_weight, click_weight, conversion_weight):
         data.drop(['reporting_starts'], axis='columns', inplace=True)
     # Rename columns from Google export
     data.rename(columns={'day': 'date'}, inplace=True)
-    # Set empty and NaN impressions, engagements, clicks and conversions to 0
-    # for calculations
+    if 'currency' in data.columns:
+        data.drop(['currency'], axis='columns', inplace=True)
+    # Set relevant empty and NaN values to 0 for calculations
     data = data.replace('', np.nan)
-    data['impressions'].fillna(value=0, downcast='infer', inplace=True)
-    data['engagements'].fillna(value=0, downcast='infer', inplace=True)
-    data['clicks'].fillna(value=0, downcast='infer', inplace=True)
-    data['conversions'].fillna(value=0, downcast='infer', inplace=True)
-    # Create successes column as weighted sum of engagements, clicks and
-    # conversions, limit to number of impressions
-    data['successes'] = [min(row['engagements'] * engagement_weight +
-                             row['clicks'] * click_weight +
-                             row['conversions'] * conversion_weight,
-                             row['impressions'])
+    for column in ['cost', 'impressions', 'engagements', 'clicks',
+                   'conversions']:
+        data[column].fillna(value=0.0, downcast='infer', inplace=True)
+    # Create successes column as weighted sum of success metrics
+    data['successes'] = [row['impressions'] * impression_weight +
+                         row['engagements'] * engagement_weight +
+                         row['clicks'] * click_weight +
+                         row['conversions'] * conversion_weight
                          for index, row in data.iterrows()]
-    data.drop(['engagements', 'clicks', 'conversions'], axis='columns',
-              inplace=True)
-    # Rename impressions trials
-    data.rename(columns={'impressions': 'trials'}, inplace=True)
+    # Create trials column as costs in cents + successes + 1
+    # to guarantee successes <= trials and correct for free impressions
+    data['trials'] = [int(row['cost'] * 100) + row['successes'] + 1
+                      for index, row in data.iterrows()]
+    # Drop processes columns
+    data.drop(['cost', 'impressions', 'engagements', 'clicks', 'conversions'],
+              axis='columns', inplace=True)
     return data
 
 
