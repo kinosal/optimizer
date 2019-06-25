@@ -40,8 +40,7 @@ def json():
     return options with suggested status or share for next period
     """
     data = pd.DataFrame(request.json)
-    data = pro.preprocess(data, impression_weight=1, engagement_weight=10,
-                          click_weight=20, conversion_weight=100)
+    data = pro.preprocess(data)
     [options, data] = pro.reindex_options(data)
     data = pro.add_days(data)
     bandit = add_daily_results(data, num_options=len(options),
@@ -114,11 +113,19 @@ def csv():
             return render_template('update_result.html', records=records,
                                    columns=columns)
 
+        weights = {}
+        for weight in ['impression_weight', 'engagement_weight',
+                       'click_weight', 'conversion_weight']:
+            if request.form[weight] == '':
+                weights[weight] = None
+            else:
+                weights[weight] = int(request.form[weight])
+
         data = pd.read_csv(StringIO(request.form['ads']), sep=None)
-        data = pro.preprocess(data, int(request.form['impression_weight']),
-                              int(request.form['engagement_weight']),
-                              int(request.form['click_weight']),
-                              int(request.form['conversion_weight']))
+        data = pro.preprocess(data, weights['impression_weight'],
+                              weights['engagement_weight'],
+                              weights['click_weight'],
+                              weights['conversion_weight'])
         [options, data] = pro.reindex_options(data)
         data = pro.add_days(data)
         bandit = add_daily_results(data, num_options=len(options),

@@ -3,16 +3,18 @@ import numpy as np
 import pandas as pd
 
 
-def preprocess(data, impression_weight, engagement_weight, click_weight,
-               conversion_weight):
+def preprocess(data, impression_weight=None, engagement_weight=None,
+               click_weight=None, conversion_weight=None):
     """
     Prepare dataframe from CSV with channel (optional), date, ad_id,
     impressions, engagements, clicks and conversions
     for bandit optimization
     """
+
     # Standardize column name input format
     data.columns = \
         [column.lower().replace(" ", "_") for column in data.columns]
+
     # Rename columns from Facebook export
     data.rename(columns={'reporting_ends': 'date'}, inplace=True)
     data.rename(columns={'amount_spent_(eur)': 'cost'}, inplace=True)
@@ -21,28 +23,51 @@ def preprocess(data, impression_weight, engagement_weight, click_weight,
     data.rename(columns={'purchases': 'conversions'}, inplace=True)
     if 'reporting_starts' in data.columns:
         data.drop(['reporting_starts'], axis='columns', inplace=True)
+
     # Rename columns from Google export
     data.rename(columns={'day': 'date'}, inplace=True)
     if 'currency' in data.columns:
         data.drop(['currency'], axis='columns', inplace=True)
+
     # Set relevant empty and NaN values to 0 for calculations
     data = data.replace('', np.nan)
     for column in ['cost', 'impressions', 'engagements', 'clicks',
                    'conversions']:
         data[column].fillna(value=0.0, downcast='infer', inplace=True)
+
+    # If not provided, set weights to relative cost ratios
+    weights = {}
+    if impression_weight is engagement_weight is click_weight is \
+       conversion_weight is None:
+        for weight in ['impression', 'engagement', 'click', 'conversion']:
+            if data[weight + 's'].sum() == 0:
+                weights[weight + '_weight'] = 0
+            else:
+                weights[weight + '_weight'] = \
+                    data['cost'].sum() * 100 / data[weight + 's'].sum()
+    else:
+        for weight in ['impression', 'engagement', 'click', 'conversion']:
+            if eval(weight + '_weight') is None:
+                weights[weight + '_weight'] = 0
+            else:
+                weights[weight + '_weight'] = eval(weight + '_weight')
+
     # Create successes column as weighted sum of success metrics
-    data['successes'] = [row['impressions'] * impression_weight +
-                         row['engagements'] * engagement_weight +
-                         row['clicks'] * click_weight +
-                         row['conversions'] * conversion_weight
+    data['successes'] = [row['impressions'] * weights['impression_weight'] +
+                         row['engagements'] * weights['engagement_weight'] +
+                         row['clicks'] * weights['click_weight'] +
+                         row['conversions'] * weights['conversion_weight']
                          for index, row in data.iterrows()]
+
     # Create trials column as costs in cents + successes + 1
     # to guarantee successes <= trials and correct for free impressions
     data['trials'] = [int(row['cost'] * 100) + row['successes'] + 1
                       for index, row in data.iterrows()]
+
     # Drop processes columns
     data.drop(['cost', 'impressions', 'engagements', 'clicks', 'conversions'],
               axis='columns', inplace=True)
+
     return data
 
 
