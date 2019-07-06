@@ -121,15 +121,21 @@ def csv():
             else:
                 weights[weight] = int(request.form[weight])
 
-        data = pd.read_csv(StringIO(request.form['ads']), sep=None)
+        data = pd.read_csv(StringIO(request.form['ads']), sep=None,
+                           engine='python')
+
         data = pro.preprocess(data, weights['impression_weight'],
                               weights['engagement_weight'],
                               weights['click_weight'],
                               weights['conversion_weight'])
+
         [options, data] = pro.reindex_options(data)
+
         data = pro.add_days(data)
+
         bandit = add_daily_results(data, num_options=len(options),
                                    memory=True, shape='linear', cutoff=28)
+
         shares = choose(bandit=bandit, accelerate=True)
 
         output = request.form['output']
@@ -178,7 +184,7 @@ def add_daily_results(data, num_options, memory, shape, cutoff):
     For each day, add a period with its option results to the Bandit
     """
     bandit = ban.Bandit(num_options, memory, shape, cutoff)
-    for _, group in data.groupby('date'):
+    for _, group in data.groupby('date', sort=True):
         bandit.add_period()
         for i in range(len(group)):
             bandit.add_results(option_id=group.iloc[i]['option_id'],
@@ -194,7 +200,7 @@ def choose(bandit, accelerate):
     """
     if accelerate:
         choices = int(np.sqrt(bandit.num_options))
-        repetitions = math.ceil(bandit.num_options / choices)
+        repetitions = min(math.ceil(bandit.num_options / choices), 10)
     else:
         choices = 1
         repetitions = 100
