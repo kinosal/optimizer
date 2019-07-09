@@ -61,8 +61,10 @@ def add_bandit_results(num_options, trials, rates, bandit, period,
         # accelerate by picking root(num_options) > 1 best options
         # for each repetition (round up repetitions for higher accuracy)
         if accelerate:
-            choices = int(np.sqrt(bandit.num_options))
-            repetitions = math.ceil(bandit.num_options / choices)
+            choices = math.ceil(bandit.num_options / 10)
+            repetitions = 10
+            # choices = int(np.sqrt(bandit.num_options))
+            # repetitions = math.ceil(bandit.num_options / choices)
         else:
             choices = 1
             repetitions = 100
@@ -80,7 +82,7 @@ def add_bandit_results(num_options, trials, rates, bandit, period,
 
 def simulate(method, periods, true_rates, deviation, change,
              trials, max_p=None, rounding=True, accelerate=True,
-             memory=False, shape='constant', cutoff=28):
+             memory=True, shape='linear', cutoff=28, cut_level=0.5):
     """
     Simulate option choosing and results adding for n periods
     and a given chooser, return respective successes with optimum and base
@@ -94,8 +96,8 @@ def simulate(method, periods, true_rates, deviation, change,
     if method == 'split':
         chooser = spl.Split(num_options=num_options)
     elif method == 'bandit':
-        chooser = ban.Bandit(num_options=num_options,
-                             memory=memory, shape=shape, cutoff=cutoff)
+        chooser = ban.Bandit(num_options=num_options, memory=memory,
+                             shape=shape, cutoff=cutoff, cut_level=cut_level)
 
     # For each period calculate and add successes for methods as well as
     # the optimal (max) and the random choice (base)
@@ -104,9 +106,9 @@ def simulate(method, periods, true_rates, deviation, change,
     base_successes = []
     for period in range(periods):
         # Calculate success rates under uncertainty (with deviation)
-        rates = [max(np.random.RandomState((i+1)*(period+1)).normal(
+        rates = [min(max(np.random.RandomState((i+1)*(period+1)).normal(
             loc=rate * rate_changes[i] ** period,
-            scale=rate * rate_changes[i] ** period * deviation), 0)
+            scale=rate * rate_changes[i] ** period * deviation), 0), 1)
                  for i, rate in enumerate(true_rates)]
 
         # Add results to Split or Bandit
@@ -150,7 +152,7 @@ def simulate(method, periods, true_rates, deviation, change,
 
 def compare_params(method, param, values, periods, true_rates, deviation,
                    change, trials, max_p, rounding=True, accelerate=True,
-                   memory=False, shape='constant', cutoff=28):
+                   memory=False, shape='constant', cutoff=14, cut_level=0.5):
     """
     Run simulation multiple times with
     different param values for the same chooser,
@@ -161,29 +163,39 @@ def compare_params(method, param, values, periods, true_rates, deviation,
     for value in values:
         if param == 'max_p':
             successes, optima = simulate(
-                method, periods, true_rates, deviation, change, trials,
-                value, rounding, accelerate, memory, shape, cutoff)[0:2]
+                method, periods, true_rates, deviation, change, trials, value,
+                rounding, accelerate, memory, shape, cutoff, cut_level)[0:2]
         elif param == 'trials':
             successes, optima = simulate(
-                method, periods, true_rates, deviation, change, value,
-                max_p, rounding, accelerate, memory, shape, cutoff)[0:2]
+                method, periods, true_rates, deviation, change, value, max_p,
+                rounding, accelerate, memory, shape, cutoff, cut_level)[0:2]
         elif param == 'true_rates':
             successes, optima = simulate(
-                method, periods, value, deviation, change, trials,
-                max_p, rounding, accelerate, memory, shape, cutoff)[0:2]
+                method, periods, value, deviation, change, trials, max_p,
+                rounding, accelerate, memory, shape, cutoff, cut_level)[0:2]
         elif param == 'deviation':
             successes, optima = simulate(
-                method, periods, true_rates, value, change, trials,
-                max_p, rounding, accelerate, memory, shape, cutoff)[0:2]
+                method, periods, true_rates, value, change, trials, max_p,
+                rounding, accelerate, memory, shape, cutoff, cut_level)[0:2]
         elif param == 'shape':
             memory = True
             successes, optima = simulate(
-                method, periods, true_rates, deviation, change, trials,
-                max_p, rounding, accelerate, memory, value, cutoff)[0:2]
+                method, periods, true_rates, deviation, change, trials, max_p,
+                rounding, accelerate, memory, value, cutoff, cut_level)[0:2]
+        elif param == 'cutoff':
+            memory = True
+            successes, optima = simulate(
+                method, periods, true_rates, deviation, change, trials, max_p,
+                rounding, accelerate, memory, shape, value, cut_level)[0:2]
+        elif param == 'cut_level':
+            memory = True
+            successes, optima = simulate(
+                method, periods, true_rates, deviation, change, trials, max_p,
+                rounding, accelerate, memory, shape, cutoff, value)[0:2]
         elif param == 'accelerate':
             successes, optima = simulate(
-                method, periods, true_rates, deviation, change, trials,
-                max_p, rounding, value, memory, shape, cutoff)[0:2]
+                method, periods, true_rates, deviation, change, trials, max_p,
+                rounding, value, memory, shape, cutoff, cut_level)[0:2]
         # Devide successes by optima for relative comparison independent from
         # param values (absolute values will not be returned)
         results.append([suc / opt for suc, opt in zip(successes, optima)])

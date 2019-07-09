@@ -54,7 +54,7 @@ results = sim.compare_params(
     values=[0.05, 0.1, 0.15, 0.2],
     periods=28, true_rates=true_rates, deviation=0.5, change=0,
     trials=trials, max_p='param', rounding=True, accelerate=True,
-    memory=False, shape='linear', cutoff=28)
+    memory=False, shape='linear', cutoff=14, cut_level=0.5)
 ```
 
 Visualize the results

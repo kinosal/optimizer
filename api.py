@@ -43,8 +43,8 @@ def json():
     data = pro.preprocess(data)
     [options, data] = pro.reindex_options(data)
     data = pro.add_days(data)
-    bandit = add_daily_results(data, num_options=len(options),
-                               memory=True, shape='linear', cutoff=28)
+    bandit = add_daily_results(data, num_options=len(options), memory=True,
+                               shape='linear', cutoff=28, cut_level=0.5)
     shares = choose(bandit=bandit, accelerate=True)
     status = request.args.get('status') == 'true'
     options = format_results(options, shares, status=status)
@@ -133,8 +133,8 @@ def csv():
 
         data = pro.add_days(data)
 
-        bandit = add_daily_results(data, num_options=len(options),
-                                   memory=True, shape='linear', cutoff=28)
+        bandit = add_daily_results(data, num_options=len(options), memory=True,
+                                   shape='linear', cutoff=28, cut_level=0.5)
 
         shares = choose(bandit=bandit, accelerate=True)
 
@@ -179,11 +179,11 @@ def after_request(response):
     return response
 
 
-def add_daily_results(data, num_options, memory, shape, cutoff):
+def add_daily_results(data, num_options, memory, shape, cutoff, cut_level):
     """
     For each day, add a period with its option results to the Bandit
     """
-    bandit = ban.Bandit(num_options, memory, shape, cutoff)
+    bandit = ban.Bandit(num_options, memory, shape, cutoff, cut_level)
     for _, group in data.groupby('date', sort=True):
         bandit.add_period()
         for i in range(len(group)):
@@ -199,8 +199,10 @@ def choose(bandit, accelerate):
     return each option's suggested share for the next period
     """
     if accelerate:
-        choices = int(np.sqrt(bandit.num_options))
-        repetitions = min(math.ceil(bandit.num_options / choices), 10)
+        choices = math.ceil(bandit.num_options / 10)
+        repetitions = 10
+        # choices = int(np.sqrt(bandit.num_options))
+        # repetitions = math.ceil(bandit.num_options / choices)
     else:
         choices = 1
         repetitions = 100

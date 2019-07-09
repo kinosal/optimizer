@@ -8,8 +8,8 @@ class Bandit():
     as well as "memorized" periodic results if specified;
     expects num_options and prior tuple to initialize
     """
-    def __init__(self, num_options, memory=False,
-                 shape='constant', cutoff=28):
+    def __init__(self, num_options, memory=True, shape='linear',
+                 cutoff=28, cut_level=0.5):
         self.memory = memory
         self.num_options = num_options
         self.prior = (1.0, 1.0)
@@ -19,6 +19,7 @@ class Bandit():
             self.periods = {'trials': [], 'successes': []}
             self.shape = shape
             self.cutoff = cutoff
+            self.cut_level = cut_level
 
     def add_period(self):
         """
@@ -61,13 +62,16 @@ class Bandit():
                         weight = 1
                     elif self.shape == 'linear':
                         # Weight linearly decreases with distance
-                        weight = 1 - distance / self.cutoff
+                        weight = \
+                            1 - distance / self.cutoff * (1 - self.cut_level)
                     elif self.shape == 'degressive':
                         # Weight decrease (slope) shrinks with distance
-                        weight = 2 * self.cutoff / (distance + self.cutoff) - 1
+                        weight = 1 - (1 - self.cut_level) \
+                             / self.cutoff ** (1/2) * distance ** (1/2)
                     elif self.shape == 'progressive':
                         # Weight decrease (slope) grows over distance
-                        weight = -(distance / self.cutoff) ** 2 + 1
+                        weight = 1 - (1 - self.cut_level) / self.cutoff ** 2 \
+                            * distance ** 2
                     trial_weights[option_id] += trials * weight
                     success_weights[option_id] += successes * weight
         return [trial_weights, success_weights]
