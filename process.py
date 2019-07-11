@@ -1,4 +1,4 @@
-from datetime import date
+import datetime
 import numpy as np
 import pandas as pd
 
@@ -71,6 +71,14 @@ def preprocess(data, impression_weight=None, engagement_weight=None,
     return data
 
 
+def filter_dates(data, cutoff):
+    """Return data with dates in cutoff range"""
+    data['date'] = pd.to_datetime(data['date'], format='%Y-%m-%d').dt.date
+    data = data.loc[data['date'] >=
+                    datetime.date.today() - datetime.timedelta(days=cutoff)]
+    return data
+
+
 def reindex_options(data):
     """
     Process dataframe with ad_id, date, trials and successes;
@@ -84,15 +92,3 @@ def reindex_options(data):
         data.at[i, 'option_id'] = \
             options.loc[options['ad_id'] == data.iloc[i]['ad_id']].index[0]
     return [options, data]
-
-
-def add_days(data):
-    """
-    Process dataframe with ad_id, date, trials, successes;
-    return dataframe with new days_ago column
-    """
-    data['date'] = pd.to_datetime(data['date'], format='%Y-%m-%d').dt.date
-    data['days_ago'] = 0
-    for i in range(len(data)):
-        data.at[i, 'days'] = (date.today() - data.iloc[i]['date']).days
-    return data

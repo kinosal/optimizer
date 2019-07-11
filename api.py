@@ -1,4 +1,5 @@
 from io import StringIO
+import datetime
 import math
 from flask import Flask, request, render_template
 import numpy as np
@@ -11,6 +12,10 @@ import config
 import ast
 from facebook_business.api import FacebookAdsApi
 from facebook_business.adobjects.ad import Ad
+
+
+CUTOFF = 7
+CUT_LEVEL = 0.5
 
 
 app = Flask(__name__)
@@ -41,10 +46,11 @@ def json():
     """
     data = pd.DataFrame(request.json)
     data = pro.preprocess(data)
+    data = pro.filter_dates(data, cutoff=CUTOFF)
     [options, data] = pro.reindex_options(data)
-    data = pro.add_days(data)
     bandit = add_daily_results(data, num_options=len(options), memory=True,
-                               shape='linear', cutoff=28, cut_level=0.5)
+                               shape='linear', cutoff=CUTOFF,
+                               cut_level=CUT_LEVEL)
     shares = choose(bandit=bandit, accelerate=True)
     status = request.args.get('status') == 'true'
     options = format_results(options, shares, status=status)
@@ -129,12 +135,13 @@ def csv():
                               weights['click_weight'],
                               weights['conversion_weight'])
 
+        data = pro.filter_dates(data, cutoff=CUTOFF)
+
         [options, data] = pro.reindex_options(data)
 
-        data = pro.add_days(data)
-
         bandit = add_daily_results(data, num_options=len(options), memory=True,
-                                   shape='linear', cutoff=28, cut_level=0.5)
+                                   shape='linear', cutoff=CUTOFF,
+                                   cut_level=CUT_LEVEL)
 
         shares = choose(bandit=bandit, accelerate=True)
 
@@ -184,12 +191,14 @@ def add_daily_results(data, num_options, memory, shape, cutoff, cut_level):
     For each day, add a period with its option results to the Bandit
     """
     bandit = ban.Bandit(num_options, memory, shape, cutoff, cut_level)
-    for _, group in data.groupby('date', sort=True):
+    for i in range(cutoff+1):
         bandit.add_period()
-        for i in range(len(group)):
-            bandit.add_results(option_id=group.iloc[i]['option_id'],
-                               trials=group.iloc[i]['trials'],
-                               successes=group.iloc[i]['successes'])
+        daily_results = data.loc[data['date'] == datetime.date.today() -
+                                 datetime.timedelta(days=cutoff-i)]
+        for j in range(len(daily_results)):
+            bandit.add_results(int(daily_results.iloc[j]['option_id']),
+                               daily_results.iloc[j]['trials'],
+                               daily_results.iloc[j]['successes'])
     return bandit
 
 
