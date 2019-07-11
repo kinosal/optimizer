@@ -8,13 +8,12 @@ from scipy.stats import beta
 import matplotlib.pyplot as plt
 import process as pro
 import bandit as ban
-import config
 import ast
 from facebook_business.api import FacebookAdsApi
 from facebook_business.adobjects.ad import Ad
 
 
-CUTOFF = 7
+CUTOFF = 14
 CUT_LEVEL = 0.5
 
 
