@@ -21,6 +21,7 @@ sentry_sdk.init(
 
 CUTOFF = 14
 CUT_LEVEL = 0.5
+SHAPE = 'linear'
 
 app = Flask(__name__)
 
@@ -53,7 +54,7 @@ def json():
     data = pro.filter_dates(data, cutoff=CUTOFF)
     [options, data] = pro.reindex_options(data)
     bandit = add_daily_results(data, num_options=len(options), memory=True,
-                               shape='linear', cutoff=CUTOFF,
+                               shape=SHAPE, cutoff=CUTOFF,
                                cut_level=CUT_LEVEL)
     shares = choose(bandit=bandit, accelerate=True)
     status = request.args.get('status') == 'true'
@@ -144,7 +145,7 @@ def csv():
         [options, data] = pro.reindex_options(data)
 
         bandit = add_daily_results(data, num_options=len(options), memory=True,
-                                   shape='linear', cutoff=CUTOFF,
+                                   shape=SHAPE, cutoff=CUTOFF,
                                    cut_level=CUT_LEVEL)
 
         shares = choose(bandit=bandit, accelerate=True)
