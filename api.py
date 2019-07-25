@@ -232,8 +232,8 @@ def format_results(options, shares, status):
     if status:
         status = (shares > 0)
         results['ad_status'] = status.tolist()
-        results.replace(True, 'ACTIVE', inplace=True)
-        results.replace(False, 'PAUSED', inplace=True)
+        results['ad_status'].replace(True, 'ACTIVE', inplace=True)
+        results['ad_status'].replace(False, 'PAUSED', inplace=True)
     else:
         results['ad_share'] = shares.tolist()
         results['ad_share'] = results['ad_share']
