@@ -11,11 +11,16 @@ import bandit as ban
 import ast
 from facebook_business.api import FacebookAdsApi
 from facebook_business.adobjects.ad import Ad
+import sentry_sdk
+from sentry_sdk.integrations.flask import FlaskIntegration
 
+sentry_sdk.init(
+    dsn="https://db6bdfc312434b7687d739a0c44ec603@sentry.io/1513206",
+    integrations=[FlaskIntegration()]
+)
 
 CUTOFF = 14
 CUT_LEVEL = 0.5
-
 
 app = Flask(__name__)
 
