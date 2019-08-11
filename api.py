@@ -135,12 +135,32 @@ def csv():
         data = pd.read_csv(StringIO(request.form['ads']), sep=None,
                            engine='python')
 
-        data = pro.preprocess(data, weights['impression_weight'],
-                              weights['engagement_weight'],
-                              weights['click_weight'],
-                              weights['conversion_weight'])
+        try:
+            data = pro.preprocess(data, weights['impression_weight'],
+                                  weights['engagement_weight'],
+                                  weights['click_weight'],
+                                  weights['conversion_weight'])
+        except:
+            error = 'Cannot pre-process your data. \
+                     Please check the CSV input format and try again.'
+            return render_template('csv.html', error=error,
+                                   output=request.form['output'],
+                                   impression_weight=request.form['impression_weight'],
+                                   engagement_weight=request.form['engagement_weight'],
+                                   click_weight=request.form['click_weight'],
+                                   conversion_weight=request.form['conversion_weight'],
+                                   ads=request.form['ads'])
 
         data = pro.filter_dates(data, cutoff=CUTOFF)
+        if data.empty:
+            error = 'Please include results from the past ' + str(CUTOFF) + ' days.'
+            return render_template('csv.html', error=error,
+                                   output=request.form['output'],
+                                   impression_weight=request.form['impression_weight'],
+                                   engagement_weight=request.form['engagement_weight'],
+                                   click_weight=request.form['click_weight'],
+                                   conversion_weight=request.form['conversion_weight'],
+                                   ads=request.form['ads'])
 
         [options, data] = pro.reindex_options(data)
 
