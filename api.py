@@ -140,10 +140,11 @@ def csv():
                                   weights['engagement_weight'],
                                   weights['click_weight'],
                                   weights['conversion_weight'])
-        except:
-            error = 'Cannot pre-process your data. \
+        except Exception as error:
+            print(error)
+            message = 'Cannot pre-process your data. \
                      Please check the CSV input format and try again.'
-            return render_template('csv.html', error=error,
+            return render_template('csv.html', error=message,
                                    output=request.form['output'],
                                    impression_weight=request.form['impression_weight'],
                                    engagement_weight=request.form['engagement_weight'],
@@ -151,7 +152,18 @@ def csv():
                                    conversion_weight=request.form['conversion_weight'],
                                    ads=request.form['ads'])
 
-        data = pro.filter_dates(data, cutoff=CUTOFF)
+        try:
+            data = pro.filter_dates(data, cutoff=CUTOFF)
+        except Exception as error:
+            print(error)
+            message = 'Please check your dates (format should be YYYY-MM-DD).'
+            return render_template('csv.html', error=message,
+                                   output=request.form['output'],
+                                   impression_weight=request.form['impression_weight'],
+                                   engagement_weight=request.form['engagement_weight'],
+                                   click_weight=request.form['click_weight'],
+                                   conversion_weight=request.form['conversion_weight'],
+                                   ads=request.form['ads'])
         if data.empty:
             error = 'Please include results from the past ' + str(CUTOFF) + ' days.'
             return render_template('csv.html', error=error,
