@@ -50,7 +50,8 @@ def json():
     return options with suggested status or share for next period
     """
     data = pd.DataFrame(request.json)
-    data = pro.preprocess(data)
+    data = pro.preprocess(data, impression_weight=0, engagement_weight=None,
+                          click_weight=None, conversion_weight=None)
     data = pro.filter_dates(data, cutoff=CUTOFF)
     [options, data] = pro.reindex_options(data)
     bandit = add_daily_results(data, num_options=len(options), memory=True,

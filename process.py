@@ -35,22 +35,17 @@ def preprocess(data, impression_weight=None, engagement_weight=None,
                    'conversions']:
         data[column].fillna(value=0.0, downcast='infer', inplace=True)
 
-    # If not provided, set weights to relative cost ratios
+    # If not provided, set weights to respective cost ratios
     weights = {}
-    if impression_weight is engagement_weight is click_weight is \
-       conversion_weight is None:
-        for weight in ['impression', 'engagement', 'click', 'conversion']:
+    for weight in ['impression', 'engagement', 'click', 'conversion']:
+        if locals()[weight + '_weight'] is None:
             if data[weight + 's'].sum() == 0:
                 weights[weight + '_weight'] = 0
             else:
                 weights[weight + '_weight'] = \
                     data['cost'].sum() * 100 / data[weight + 's'].sum()
-    else:
-        for weight in ['impression', 'engagement', 'click', 'conversion']:
-            if eval(weight + '_weight') is None:
-                weights[weight + '_weight'] = 0
-            else:
-                weights[weight + '_weight'] = eval(weight + '_weight')
+        else:
+            weights[weight + '_weight'] = locals()[weight + '_weight']
 
     # Create successes column as weighted sum of success metrics
     data['successes'] = [row['impressions'] * weights['impression_weight'] +
