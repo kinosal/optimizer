@@ -49,17 +49,25 @@ def json():
     impressions, engagements, clicks and conversions;
     return options with suggested status or share for next period
     """
-    data = pd.DataFrame(request.json)
-    data = pro.preprocess(data, impression_weight=0, engagement_weight=None,
-                          click_weight=None, conversion_weight=None)
+    if not 'optimize' in request.json:
+        return '"optimize" key missing in posted JSON object'
+    if not 'stats' in request.json:
+        return '"stats" key missing in posted JSON object'
+
+    weights = {'impression_weight': 0, 'engagement_weight': 0,
+               'click_weight': 0, 'conversion_weight': 0}
+    for metric in request.json['optimize']:
+        weights[metric[:-1] + '_weight'] = None
+
+    data = pd.DataFrame(request.json['stats'])
+    data = pro.preprocess(data, **weights)
     data = pro.filter_dates(data, cutoff=CUTOFF)
     [options, data] = pro.reindex_options(data)
     bandit = add_daily_results(data, num_options=len(options), memory=True,
                                shape=SHAPE, cutoff=CUTOFF,
                                cut_level=CUT_LEVEL)
     shares = choose(bandit=bandit, accelerate=True)
-    status = request.args.get('status') == 'true'
-    options = format_results(options, shares, status=status)
+    options = format_results(options, shares)
     return options.to_json(orient='records')
 
 
@@ -82,7 +90,7 @@ def form():
             bandit.add_results(option_id=i, trials=trials[i],
                                successes=successes[i])
         shares = choose(bandit=bandit, accelerate=False)
-        options = format_results(options, shares, status=False)
+        options = format_results(options, shares)
         records = options.to_dict('records')
         columns = options.columns.values
         save_plot(bandit)
@@ -258,7 +266,7 @@ def choose(bandit, accelerate):
     return shares
 
 
-def format_results(options, shares, status):
+def format_results(options, shares, status=False):
     """
     Return ACTIVE/PAUSED instead of numeric share for options if desired
     """
