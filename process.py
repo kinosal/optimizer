@@ -35,6 +35,9 @@ def preprocess(data, impression_weight=None, engagement_weight=None,
                    'conversions']:
         data[column].fillna(value=0.0, downcast='infer', inplace=True)
 
+    # Remove rows with 0 cost (ads that did not run)
+    data = data[data['cost'] != 0]
+
     # If not provided, set weights to respective cost ratios
     weights = {}
     for weight in ['impression', 'engagement', 'click', 'conversion']:
@@ -59,9 +62,12 @@ def preprocess(data, impression_weight=None, engagement_weight=None,
     data['trials'] = [int(row['cost'] * 100) + row['successes'] + 1
                       for index, row in data.iterrows()]
 
-    # Drop processes columns
-    data.drop(['cost', 'impressions', 'engagements', 'clicks', 'conversions'],
-              axis='columns', inplace=True)
+    # Only keep necessary columns
+    keep = ['ad_id', 'date', 'trials', 'successes']
+    data.drop(data.columns.difference(keep), 1, inplace=True)
+
+    # Drop all rows with remaining NaN values (e.g. missing ad_id)
+    data.dropna(axis=0, how='any', inplace=True)
 
     return data
 

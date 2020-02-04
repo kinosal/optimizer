@@ -174,7 +174,7 @@ def csv():
                                    conversion_weight=request.form['conversion_weight'],
                                    ads=request.form['ads'])
         if data.empty:
-            error = 'Please include results from the past ' + str(CUTOFF) + ' days.'
+            error = 'Please include results with data from the past ' + str(CUTOFF) + ' days.'
             return render_template('csv.html', error=error,
                                    output=request.form['output'],
                                    impression_weight=request.form['impression_weight'],
