@@ -62,9 +62,16 @@ def preprocess(data, impression_weight=None, engagement_weight=None,
     data['trials'] = [int(row['cost'] * 100) + row['successes'] + 1
                       for index, row in data.iterrows()]
 
+    # Drop processed columns
+    drop = ['cost', 'impressions', 'engagements', 'clicks', 'conversions']
+    data.drop(drop, axis='columns', inplace=True)
+
     # Only keep necessary columns
-    keep = ['ad_id', 'date', 'trials', 'successes']
-    data.drop(data.columns.difference(keep), 1, inplace=True)
+    # Does not comply with API consumption at this point,
+    # Revise later in coordination with API consumers
+
+    # keep = ['ad_id', 'date', 'trials', 'successes']
+    # data.drop(data.columns.difference(keep), axis='columns', inplace=True)
 
     # Drop all rows with remaining NaN values (e.g. missing ad_id)
     data.dropna(axis=0, how='any', inplace=True)

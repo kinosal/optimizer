@@ -1,3 +1,4 @@
+import datetime
 import pytest
 from api import app
 
@@ -13,18 +14,24 @@ def test_index(client):
 
 
 def test_json(client):
-    data = [
-        {
-            "date": "2019-07-24",
-            "ad_id": 1,
-            "cost": 15,
-            "impressions": 1000,
-            "engagements": 100,
-            "clicks": 10,
-            "conversions": 1
-        }
-    ]
+    date = str(datetime.date.today() - datetime.timedelta(days=1))
+    data = {
+        "optimize": ["clicks", "engagements", "conversions"],
+        "stats": [
+            {
+                "date": date,
+                "ad_id": 1,
+                "cost": 15,
+                "impressions": 1000,
+                "engagements": 100,
+                "clicks": 10,
+                "conversions": 1
+            }
+        ]
+    }
+
     response = client.post('/json', json=data)
+
     assert response.status_code == 200
     assert b'ad_id' in response.data
     assert b'ad_share' in response.data
@@ -51,9 +58,10 @@ def test_get_csv(client):
 
 
 def test_post_csv(client):
+    date = str(datetime.date.today() - datetime.timedelta(days=1))
     response = client.post('/csv', data={
         'ads': """channel,date,ad_id,cost,impressions,engagements,clicks,conversions
-                  facebook,2019-07-25,1,1500,1000,100,10,1""",
+                  facebook,{},1,1500,1000,100,10,1""".format(date),
         'update': 'false',
         'impression_weight': '',
         'engagement_weight': '',
