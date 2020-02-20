@@ -69,12 +69,11 @@ def preprocess(data, impression_weight=None, engagement_weight=None,
     # Only keep necessary columns
     # Does not comply with API consumption at this point,
     # Revise later in coordination with API consumers
-
     # keep = ['ad_id', 'date', 'trials', 'successes']
     # data.drop(data.columns.difference(keep), axis='columns', inplace=True)
 
-    # Drop all rows with remaining NaN values (e.g. missing ad_id)
-    data.dropna(axis=0, how='any', inplace=True)
+    # Drop rows with missing ad_id
+    data.dropna(axis='index', subset=['ad_id'], inplace=True)
 
     return data
 
