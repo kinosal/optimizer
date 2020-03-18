@@ -29,11 +29,17 @@ def preprocess(data, impression_weight=None, engagement_weight=None,
     if 'currency' in data.columns:
         data.drop(['currency'], axis='columns', inplace=True)
 
+    # Drop rows with missing required entries
+    data.dropna(axis='index', inplace=True, subset=['ad_id', 'date'])
+
     # Set relevant empty and NaN values to 0 for calculations
     data = data.replace('', np.nan)
     for column in ['cost', 'impressions', 'engagements', 'clicks',
                    'conversions']:
-        data[column].fillna(value=0.0, downcast='infer', inplace=True)
+        if column in data.columns:
+            data[column].fillna(value=0.0, downcast='infer', inplace=True)
+        else:
+            data[column] = 0.0
 
     # Remove rows with 0 cost (ads that did not run)
     data = data[data['cost'] != 0]
@@ -46,7 +52,7 @@ def preprocess(data, impression_weight=None, engagement_weight=None,
                 weights[weight + '_weight'] = 0
             else:
                 weights[weight + '_weight'] = \
-                    data['cost'].sum() * 100 / data[weight + 's'].sum()
+                    (data['cost'].sum() / data[weight + 's'].sum()) ** 2
         else:
             weights[weight + '_weight'] = locals()[weight + '_weight']
 
@@ -57,23 +63,14 @@ def preprocess(data, impression_weight=None, engagement_weight=None,
                          row['conversions'] * weights['conversion_weight']
                          for index, row in data.iterrows()]
 
-    # Create trials column as costs in cents + successes + 1
+    # Create trials column as costs + successes + 1
     # to guarantee successes <= trials and correct for free impressions
-    data['trials'] = [int(row['cost'] * 100) + row['successes'] + 1
+    data['trials'] = [int(row['cost']) + row['successes']
                       for index, row in data.iterrows()]
 
     # Drop processed columns
     drop = ['cost', 'impressions', 'engagements', 'clicks', 'conversions']
     data.drop(drop, axis='columns', inplace=True)
-
-    # Only keep necessary columns
-    # Does not comply with API consumption at this point,
-    # Revise later in coordination with API consumers
-    # keep = ['ad_id', 'date', 'trials', 'successes']
-    # data.drop(data.columns.difference(keep), axis='columns', inplace=True)
-
-    # Drop rows with missing ad_id
-    data.dropna(axis='index', subset=['ad_id'], inplace=True)
 
     return data
 
