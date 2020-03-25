@@ -49,10 +49,21 @@ def json():
     impressions, engagements, clicks and conversions;
     return options with suggested status or share for next period
     """
+
+    # Check if JSON contains required data
     if not 'optimize' in request.json:
+        if not 'stats' in request.json:
+            return '"optimize" and "stats" keys missing in posted JSON object'
         return '"optimize" key missing in posted JSON object'
     if not 'stats' in request.json:
         return '"stats" key missing in posted JSON object'
+
+    if not request.json['optimize']:
+        if not request.json['stats']:
+            return '"optimize" and "stats" keys are empty'
+        return '"optimize" key is empty'
+    if not request.json['stats']:
+        return '"stats" key is empty'
 
     weights = {'impression_weight': 0, 'engagement_weight': 0,
                'click_weight': 0, 'conversion_weight': 0}
