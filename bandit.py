@@ -57,18 +57,18 @@ class Bandit():
                 trials = self.periods['trials'][period_id][option_id]
                 successes = self.periods['successes'][period_id][option_id]
                 if distance < self.cutoff:
-                    if self.shape == 'constant':
+                    if self.shape == 'constant':  # pragma: no cover
                         # Equal weight for every period
                         weight = 1
                     elif self.shape == 'linear':
                         # Weight linearly decreases with distance
                         weight = \
                             1 - distance / self.cutoff * (1 - self.cut_level)
-                    elif self.shape == 'degressive':
+                    elif self.shape == 'degressive':  # pragma: no cover
                         # Weight decrease (slope) shrinks with distance
                         weight = 1 - (1 - self.cut_level) \
                              / self.cutoff ** (1/2) * distance ** (1/2)
-                    elif self.shape == 'progressive':
+                    elif self.shape == 'progressive':  # pragma: no cover
                         # Weight decrease (slope) grows over distance
                         weight = 1 - (1 - self.cut_level) / self.cutoff ** 2 \
                             * distance ** 2

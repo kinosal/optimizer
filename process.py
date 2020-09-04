@@ -21,12 +21,12 @@ def preprocess(data, impression_weight=None, engagement_weight=None,
     data.rename(columns={'post_engagement': 'engagements'}, inplace=True)
     data.rename(columns={'link_clicks': 'clicks'}, inplace=True)
     data.rename(columns={'purchases': 'conversions'}, inplace=True)
-    if 'reporting_starts' in data.columns:
+    if 'reporting_starts' in data.columns:  # pragma: no cover
         data.drop(['reporting_starts'], axis='columns', inplace=True)
 
     # Rename columns from Google export
     data.rename(columns={'day': 'date'}, inplace=True)
-    if 'currency' in data.columns:
+    if 'currency' in data.columns:  # pragma: no cover
         data.drop(['currency'], axis='columns', inplace=True)
 
     # Drop rows with missing required entries
@@ -38,7 +38,7 @@ def preprocess(data, impression_weight=None, engagement_weight=None,
                    'conversions']:
         if column in data.columns:
             data[column].fillna(value=0.0, downcast='infer', inplace=True)
-        else:
+        else:  # pragma: no cover
             data[column] = 0.0
 
     # Remove rows with 0 cost (ads that did not run)
@@ -48,7 +48,7 @@ def preprocess(data, impression_weight=None, engagement_weight=None,
     weights = {}
     for weight in ['impression', 'engagement', 'click', 'conversion']:
         if locals()[weight + '_weight'] is None:
-            if data[weight + 's'].sum() == 0:
+            if data[weight + 's'].sum() == 0:  # pragma: no cover
                 weights[weight + '_weight'] = 0
             else:
                 weights[weight + '_weight'] = \

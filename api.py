@@ -5,6 +5,8 @@ from flask import Flask, request, render_template
 import numpy as np
 import pandas as pd
 from scipy.stats import beta
+import matplotlib as mpl
+mpl.use('Agg')
 import matplotlib.pyplot as plt
 import process as pro
 import bandit as ban
@@ -51,18 +53,18 @@ def json():
     """
 
     # Check if JSON contains required data
-    if not 'optimize' in request.json:
+    if not 'optimize' in request.json:  # pragma: no cover
         if not 'stats' in request.json:
             return '"optimize" and "stats" keys missing in posted JSON object'
         return '"optimize" key missing in posted JSON object'
-    if not 'stats' in request.json:
+    if not 'stats' in request.json:  # pragma: no cover
         return '"stats" key missing in posted JSON object'
 
-    if not request.json['optimize']:
+    if not request.json['optimize']:  # pragma: no cover
         if not request.json['stats']:
             return '"optimize" and "stats" keys are empty'
         return '"optimize" key is empty'
-    if not request.json['stats']:
+    if not request.json['stats']:  # pragma: no cover
         return '"stats" key is empty'
 
     weights = {'impression_weight': 0, 'engagement_weight': 0,
@@ -121,7 +123,7 @@ def csv():
     """
 
     if request.method == 'POST':
-        if request.form['update'] == 'true':
+        if request.form['update'] == 'true':  # pragma: no cover
             app_id = request.form['app_id']
             app_secret = request.form['app_secret']
             access_token = request.form['access_token']
@@ -160,7 +162,7 @@ def csv():
                                   weights['engagement_weight'],
                                   weights['click_weight'],
                                   weights['conversion_weight'])
-        except Exception as error:
+        except Exception as error:  # pragma: no cover
             print(error)
             message = 'Cannot pre-process your data. \
                      Please check the CSV input format and try again.'
@@ -174,7 +176,7 @@ def csv():
 
         try:
             data = pro.filter_dates(data, cutoff=CUTOFF)
-        except Exception as error:
+        except Exception as error:  # pragma: no cover
             print(error)
             message = 'Please check your dates (format should be YYYY-MM-DD).'
             return render_template('csv.html', error=message,
@@ -184,7 +186,7 @@ def csv():
                                    click_weight=request.form['click_weight'],
                                    conversion_weight=request.form['conversion_weight'],
                                    ads=request.form['ads'])
-        if data.empty:
+        if data.empty:  # pragma: no cover
             error = 'Please include results with data from the past ' + str(CUTOFF) + ' days.'
             return render_template('csv.html', error=error,
                                    output=request.form['output'],
@@ -311,7 +313,7 @@ def save_plot(bandit):
     plt.clf()
 
 
-def update_facebook(app_id, app_secret, access_token, options):
+def update_facebook(app_id, app_secret, access_token, options):  # pragma: no cover
     """
     Update status of ads on Facebook if different from respective suggestion;
     return dataframe with updated ads

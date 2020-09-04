@@ -1,6 +1,10 @@
 .DS_Store
 .env
+.venv
 *.csv
 zappa_settings.json
 __pycache__
 config.py
+.coverage
+/htmlcov
+.png

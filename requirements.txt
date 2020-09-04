@@ -1,8 +1,0 @@
-flask
-zappa
-numpy
-pandas
-scipy
-matplotlib
-datetime
-facebook_business
