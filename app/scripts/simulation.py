@@ -2,10 +2,10 @@ import random
 import math
 import numpy as np
 import matplotlib
-matplotlib.use('TkAgg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import split as spl
-import bandit as ban
+from app.scripts import split as spl
+from app.scripts import bandit as ban
 
 
 def add_split_results(trials, max_p, rates, split, period, rounding):
@@ -292,4 +292,5 @@ def plot(periods, parameters, relative=False):
                   fontsize=10)
     plt.xlabel('Periods')
     plt.legend()
-    plt.show()
+    # plt.show()
+    plt.savefig('results.png')

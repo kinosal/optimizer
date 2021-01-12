@@ -1,21 +1,33 @@
+"""Unit tests."""
+
 import datetime
 import unittest
-# import pytest
-from api import app
+
+from app.config import TestingConfig
+from app import create_app
 
 
-# @pytest.fixture
-# def client():
-#     return app.test_client()
+class TestSetup(unittest.TestCase):
+    """Unit testing setup."""
+
+    def setUp(self):
+        """Create new app and database for each test."""
+        self.app = create_app(TestingConfig)
+        self.app_context = self.app.app_context()
+        self.app_context.push()
+
+    def tearDown(self):
+        """Remove databse and app context after each test."""
+        self.app_context.pop()
 
 
-class Tests(unittest.TestCase):
+class Tests(TestSetup):
     def test_index(self):
-        response = app.test_client().get('/')
+        response = self.app.test_client().get('/')
         assert response.status_code == 200
 
     def test_ping(self):
-        response = app.test_client().get('/ping')
+        response = self.app.test_client().get('/ping')
         assert response.status_code == 200
 
     def test_json(self):
@@ -35,18 +47,18 @@ class Tests(unittest.TestCase):
             ]
         }
 
-        response = app.test_client().post('/json', json=data)
+        response = self.app.test_client().post('/json', json=data)
 
         assert response.status_code == 200
         assert b'ad_id' in response.data
         assert b'ad_share' in response.data
 
     def test_get_form(self):
-        response = app.test_client().get('/form')
+        response = self.app.test_client().get('/form')
         assert response.status_code == 200
 
     def test_post_form(self):
-        response = app.test_client().post('/form', data={
+        response = self.app.test_client().post('/form', data={
             'trials_1': 1000, 'successes_1': 100,
             'trials_2': 1000, 'successes_2': 50
         })
@@ -55,12 +67,12 @@ class Tests(unittest.TestCase):
         assert b'ad_share' in response.data
 
     def test_get_csv(self):
-        response = app.test_client().get('/csv')
+        response = self.app.test_client().get('/csv')
         assert response.status_code == 200
 
     def test_post_csv_status_channel(self):
         date = str(datetime.date.today() - datetime.timedelta(days=1))
-        response = app.test_client().post('/csv', data={
+        response = self.app.test_client().post('/csv', data={
             'ads': """channel,date,ad_id,cost,impressions,engagements,clicks,conversions
                       facebook,{},1,1500,1000,100,10,1""".format(date),
             'update': 'false',
@@ -76,7 +88,7 @@ class Tests(unittest.TestCase):
 
     def test_post_csv_status_weights(self):
         date = str(datetime.date.today() - datetime.timedelta(days=1))
-        response = app.test_client().post('/csv', data={
+        response = self.app.test_client().post('/csv', data={
             'ads': """date,ad_id,cost,impressions,engagements,clicks,conversions
                       {},1,1500,1000,100,10,1""".format(date),
             'update': 'false',
@@ -92,7 +104,7 @@ class Tests(unittest.TestCase):
 
     def test_post_csv_shares(self):
         date = str(datetime.date.today() - datetime.timedelta(days=1))
-        response = app.test_client().post('/csv', data={
+        response = self.app.test_client().post('/csv', data={
             'ads': """date,ad_id,cost,impressions,engagements,clicks,conversions
                       {},1,1500,1000,100,10,1""".format(date),
             'update': 'false',

@@ -8,9 +8,9 @@ Contains the code to simulate variant testing with Split (A/B) test and multi-ar
 
 This project contains two parts, a simulator and a web app incl. API.
 
-1) Simulator: Defined in simulation.py, consuming split.py and bandit.py (the two competing optimization models)
+1) Simulator: Defined in app/scripts/simulation.py, consuming split.py and bandit.py (the two competing optimization models)
 
-2) App: Endpoints/routes defined in api.py, consuming bandit.py (optimization model) and process.py (for data pre-processing). HTML views in templates, plot image for form result page saved as static/images/plot.png, JS to add form elements in static/js/form.js.
+2) App: Endpoints/routes defined in app (init), consuming scripts/bandit.py (optimization model) and scripts/process.py (for data pre-processing). HTML views in templates, plot image for form result page saved as static/images/plot.png, JS to add form elements in static/js/form.js.
 
 ## Contribution
 
@@ -18,19 +18,18 @@ Please submit any [issues](https://github.com/kinosal/optimizer/issues) you have
 
 ## Environment
 
-- Python 3.6
+- Python 3.8
 - Flask (web framework)
 - zappa (deployment to AWS lambda)
 - numpy (Python computing package)
 - pandas (Python data analytics library)
 - scipy (Python statistics library)
-- DateTime (Python datetime module)
 
 ## Example simulation
 
 Import simulation
 ```Python
-import simulation as sim
+from app.scripts import simulation as sim
 import random
 ```
 
