@@ -13,8 +13,10 @@ import numpy as np
 import pandas as pd
 from scipy.stats import beta
 import matplotlib as mpl
+
 mpl.use('Agg')
 import matplotlib.pyplot as plt
+
 # from facebook_business.api import FacebookAdsApi
 # from facebook_business.adobjects.ad import Ad
 
@@ -39,13 +41,14 @@ def create_app(config_class: object):
     if os.environ.get("FLASK_ENV") == "production":  # pragma: no cover
         sentry_sdk.init(
             dsn="https://db6bdfc312434b7687d739a0c44ec603@sentry.io/1513206",
-            integrations=[FlaskIntegration(), SqlalchemyIntegration()]
+            integrations=[FlaskIntegration(), SqlalchemyIntegration()],
         )
     app = Flask(__name__)
     app.config.from_object(config_class)
     db.init_app(app)
 
     from app.api.v1 import api_v1
+
     app.register_blueprint(api_v1)
 
     @app.route('/ping', methods=['GET', 'POST'])
@@ -77,8 +80,12 @@ def create_app(config_class: object):
         if not request.json['stats']:  # pragma: no cover
             return '"stats" key is empty'
 
-        weights = {'impression_weight': 0, 'engagement_weight': 0,
-                   'click_weight': 0, 'conversion_weight': 0}
+        weights = {
+            'impression_weight': 0,
+            'engagement_weight': 0,
+            'click_weight': 0,
+            'conversion_weight': 0,
+        }
         for metric in request.json['optimize']:
             weights[metric[:-1] + '_weight'] = None
 
@@ -110,21 +117,25 @@ def create_app(config_class: object):
         if request.method == 'POST':
             entries = [value for value in list(request.form.values()) if value]
             num_options = int(len(entries) / 2)
-            options = pd.DataFrame(
-                [{'option': str(i+1)} for i in range(num_options)])
-            trials = [int(entries[i*2]) for i in range(num_options)]
-            successes = [int(entries[i*2+1]) for i in range(num_options)]
+            options = pd.DataFrame([{'option': str(i + 1)} for i in range(num_options)])
+            trials = [int(entries[i * 2]) for i in range(num_options)]
+            successes = [int(entries[i * 2 + 1]) for i in range(num_options)]
             bandit = ban.Bandit(num_options=num_options, memory=False)
             for i in range(num_options):
-                bandit.add_results(option_id=i, trials=trials[i],
-                                   successes=successes[i])
+                bandit.add_results(
+                    option_id=i, trials=trials[i], successes=successes[i]
+                )
             shares = bandit.calculate_shares(accelerate=False)
             options = format_results(options, shares)
             records = options.to_dict('records')
             columns = options.columns.values
             save_plot(bandit)
-            return render_template('form_result.html', records=records,
-                                   columns=columns, plot='/static/images/plot.png')
+            return render_template(
+                'form_result.html',
+                records=records,
+                columns=columns,
+                plot='/static/images/plot.png',
+            )
 
         return render_template('form.html')
 
@@ -152,31 +163,39 @@ def create_app(config_class: object):
                 results = pd.DataFrame(columns=['ad_id', 'ad_status'])
                 for index in indices:
                     for record in records[index]:
-                        results.loc[len(results)] = \
-                            [record['ad_id'], record['ad_status']]
-                updated = update_facebook(app_id, app_secret, access_token,
-                                          results)
+                        results.loc[len(results)] = [
+                            record['ad_id'],
+                            record['ad_status'],
+                        ]
+                updated = update_facebook(app_id, app_secret, access_token, results)
                 records = updated.to_dict('records')
                 columns = updated.columns.values
-                return render_template('update_result.html', records=records,
-                                       columns=columns)
+                return render_template(
+                    'update_result.html', records=records, columns=columns
+                )
 
             weights = {}
-            for weight in ['impression_weight', 'engagement_weight',
-                           'click_weight', 'conversion_weight']:
+            for weight in [
+                'impression_weight',
+                'engagement_weight',
+                'click_weight',
+                'conversion_weight',
+            ]:
                 if request.form[weight] == '':
                     weights[weight] = None
                 else:
                     weights[weight] = int(request.form[weight])
 
-            data = pd.read_csv(StringIO(request.form['ads']), sep=None,
-                               engine='python')
+            data = pd.read_csv(StringIO(request.form['ads']), sep=None, engine='python')
 
             try:
-                data = pro.preprocess(data, weights['impression_weight'],
-                                      weights['engagement_weight'],
-                                      weights['click_weight'],
-                                      weights['conversion_weight'])
+                data = pro.preprocess(
+                    data,
+                    weights['impression_weight'],
+                    weights['engagement_weight'],
+                    weights['click_weight'],
+                    weights['conversion_weight'],
+                )
             except Exception as error:  # pragma: no cover
                 print(error)
                 message = 'Cannot pre-process your data. \
@@ -208,7 +227,11 @@ def create_app(config_class: object):
                     ads=request.form['ads'],
                 )
             if data.empty:  # pragma: no cover
-                error = 'Please include results with data from the past ' + str(CUTOFF) + ' days.'
+                error = (
+                    'Please include results with data from the past '
+                    + str(CUTOFF)
+                    + ' days.'
+                )
                 return render_template(
                     'csv.html',
                     error=error,
@@ -239,8 +262,12 @@ def create_app(config_class: object):
                 results = format_results(options, shares, status=False).round(2)
 
             if 'channel' in options.columns:
-                channel_shares = format_results(options, shares, status=False). \
-                    groupby('channel')['ad_share'].sum().round(2)
+                channel_shares = (
+                    format_results(options, shares, status=False)
+                    .groupby('channel')['ad_share']
+                    .sum()
+                    .round(2)
+                )
                 channels = []
                 records = []
                 for name, group in results.groupby('channel'):
@@ -248,15 +275,17 @@ def create_app(config_class: object):
                     group = group.drop(['channel'], axis=1)
                     columns = group.columns.values
                     records.append(group.to_dict('records'))
-                return render_template('csv_result_channels.html',
-                                       channels=channels,
-                                       channel_shares=channel_shares,
-                                       records=records, columns=columns)
+                return render_template(
+                    'csv_result_channels.html',
+                    channels=channels,
+                    channel_shares=channel_shares,
+                    records=records,
+                    columns=columns,
+                )
 
             records = results.to_dict('records')
             columns = results.columns.values
-            return render_template('csv_result.html', records=records,
-                                   columns=columns)
+            return render_template('csv_result.html', records=records, columns=columns)
 
         return render_template('csv.html')
 
@@ -265,8 +294,9 @@ def create_app(config_class: object):
         """
         Clear server cache after every request to display newest plot image
         """
-        response.headers['Cache-Control'] = \
-            'no-cache, no-store, must-revalidate, public, max-age=0'
+        response.headers[
+            'Cache-Control'
+        ] = 'no-cache, no-store, must-revalidate, public, max-age=0'
         response.headers['Expires'] = 0
         response.headers['Pragma'] = 'no-cache'
         return response
@@ -277,7 +307,7 @@ def create_app(config_class: object):
         """
         results = options.copy()
         if status:
-            status = (shares > 0)
+            status = shares > 0
             results['ad_status'] = status.tolist()
             results['ad_status'].replace(True, 'ACTIVE', inplace=True)
             results['ad_status'].replace(False, 'PAUSED', inplace=True)
@@ -292,9 +322,13 @@ def create_app(config_class: object):
         """
         x = np.linspace(0, 1, 100)
         for i in range(len(bandit.trials)):
-            plt.plot(x, beta.pdf(
-                x, bandit.successes[i], bandit.trials[i] - bandit.successes[i]),
-                     label='option ' + str(i+1))
+            plt.plot(
+                x,
+                beta.pdf(
+                    x, bandit.successes[i], bandit.trials[i] - bandit.successes[i]
+                ),
+                label='option ' + str(i + 1),
+            )
         plt.xlabel('Success rate')
         plt.ylabel('Probablity density')
         plt.grid()
@@ -318,7 +352,7 @@ def create_app(config_class: object):
         # Split options into batches and loop through those
         i = 0
         for _ in range(batches):
-            option_batch = options.loc[i:i+batch_size, :]
+            option_batch = options.loc[i : i + batch_size, :]
             i += batch_size
             update_batch = api.new_batch()
             # Loop through options within batch, compare current and suggested
@@ -332,8 +366,11 @@ def create_app(config_class: object):
                 if old_status != new_status:
                     ad[Ad.Field.status] = new_status
                     updated.append([ad_id, old_status + ' -> ' + new_status])
-                    ad.api_update(batch=update_batch, fields=[],
-                                  params={Ad.Field.status: new_status})
+                    ad.api_update(
+                        batch=update_batch,
+                        fields=[],
+                        params={Ad.Field.status: new_status},
+                    )
             update_batch.execute()
         return pd.DataFrame(updated, columns=['ad_id', 'updated'])
 

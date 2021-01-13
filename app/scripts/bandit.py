@@ -4,14 +4,16 @@ import numpy as np
 from scipy.stats import beta
 
 
-class Bandit():
+class Bandit:
     """
     Bandit instance holds cumulated trials and successes
     as well as "memorized" periodic results if specified;
     expects num_options and prior tuple to initialize
     """
-    def __init__(self, num_options, memory=True, shape='linear',
-                 cutoff=28, cut_level=0.5):
+
+    def __init__(
+        self, num_options, memory=True, shape='linear', cutoff=28, cut_level=0.5
+    ):
         self.memory = memory
         self.num_options = num_options
         self.prior = (1.0, 1.0)
@@ -27,10 +29,8 @@ class Bandit():
         """
         Add new empty period to memory
         """
-        self.periods['trials'].append(
-            np.zeros(shape=(self.num_options,), dtype=int))
-        self.periods['successes'].append(
-            np.zeros(shape=(self.num_options,), dtype=int))
+        self.periods['trials'].append(np.zeros(shape=(self.num_options,), dtype=int))
+        self.periods['successes'].append(np.zeros(shape=(self.num_options,), dtype=int))
 
     def add_results(self, option_id, trials, successes):
         """
@@ -49,8 +49,8 @@ class Bandit():
         for i in range(self.cutoff + 1):
             self.add_period()
             daily_results = data.loc[
-                data['date'] == datetime.date.today()
-                - datetime.timedelta(days=self.cutoff - i)
+                data['date']
+                == datetime.date.today() - datetime.timedelta(days=self.cutoff - i)
             ]
             for j in range(len(daily_results)):
                 self.add_results(
@@ -81,16 +81,17 @@ class Bandit():
                         weight = 1
                     elif self.shape == 'linear':
                         # Weight linearly decreases with distance
-                        weight = \
-                            1 - distance / self.cutoff * (1 - self.cut_level)
+                        weight = 1 - distance / self.cutoff * (1 - self.cut_level)
                     elif self.shape == 'degressive':  # pragma: no cover
                         # Weight decrease (slope) shrinks with distance
-                        weight = 1 - (1 - self.cut_level) \
-                             / self.cutoff ** (1/2) * distance ** (1/2)
+                        weight = 1 - (1 - self.cut_level) / self.cutoff ** (
+                            1 / 2
+                        ) * distance ** (1 / 2)
                     elif self.shape == 'progressive':  # pragma: no cover
                         # Weight decrease (slope) grows over distance
-                        weight = 1 - (1 - self.cut_level) / self.cutoff ** 2 \
-                            * distance ** 2
+                        weight = (
+                            1 - (1 - self.cut_level) / self.cutoff ** 2 * distance ** 2
+                        )
                     trial_weights[option_id] += trials * weight
                     success_weights[option_id] += successes * weight
         return [trial_weights, success_weights]
@@ -109,13 +110,19 @@ class Bandit():
         sampled_theta = []
         for i in range(self.num_options):
             # Construct beta distribution for each option's success
-            dist = beta(self.prior[0] + success_weights[i],
-                        self.prior[1] + trial_weights[i] - success_weights[i])
+            dist = beta(
+                self.prior[0] + success_weights[i],
+                self.prior[1] + trial_weights[i] - success_weights[i],
+            )
             # Draw one sample from beta distribution
             sampled_theta += [dist.rvs()]
         # Return the indices of the samples with the largest values
-        return [idx for (idx, theta) in sorted(
-            enumerate(sampled_theta), key=lambda x: x[1])[-choices:]]
+        return [
+            idx
+            for (idx, theta) in sorted(enumerate(sampled_theta), key=lambda x: x[1])[
+                -choices:
+            ]
+        ]
 
     def repeat_choice(self, choices, repetitions):
         """

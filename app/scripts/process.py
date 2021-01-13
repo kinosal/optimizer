@@ -3,8 +3,13 @@ import numpy as np
 import pandas as pd
 
 
-def preprocess(data, impression_weight=None, engagement_weight=None,
-               click_weight=None, conversion_weight=None):
+def preprocess(
+    data,
+    impression_weight=None,
+    engagement_weight=None,
+    click_weight=None,
+    conversion_weight=None,
+):
     """
     Prepare dataframe from CSV with channel (optional), date, ad_id,
     impressions, engagements, clicks and conversions
@@ -12,8 +17,7 @@ def preprocess(data, impression_weight=None, engagement_weight=None,
     """
 
     # Standardize column name input format
-    data.columns = \
-        [column.lower().replace(" ", "_") for column in data.columns]
+    data.columns = [column.lower().replace(" ", "_") for column in data.columns]
 
     # Rename columns from Facebook export
     data.rename(columns={'reporting_ends': 'date'}, inplace=True)
@@ -34,8 +38,7 @@ def preprocess(data, impression_weight=None, engagement_weight=None,
 
     # Set relevant empty and NaN values to 0 for calculations
     data = data.replace('', np.nan)
-    for column in ['cost', 'impressions', 'engagements', 'clicks',
-                   'conversions']:
+    for column in ['cost', 'impressions', 'engagements', 'clicks', 'conversions']:
         if column in data.columns:
             data[column].fillna(value=0.0, downcast='infer', inplace=True)
         else:  # pragma: no cover
@@ -51,22 +54,26 @@ def preprocess(data, impression_weight=None, engagement_weight=None,
             if data[weight + 's'].sum() == 0:  # pragma: no cover
                 weights[weight + '_weight'] = 0
             else:
-                weights[weight + '_weight'] = \
-                    (data['cost'].sum() / data[weight + 's'].sum()) ** 2
+                weights[weight + '_weight'] = (
+                    data['cost'].sum() / data[weight + 's'].sum()
+                ) ** 2
         else:
             weights[weight + '_weight'] = locals()[weight + '_weight']
 
     # Create successes column as weighted sum of success metrics
-    data['successes'] = [row['impressions'] * weights['impression_weight'] +
-                         row['engagements'] * weights['engagement_weight'] +
-                         row['clicks'] * weights['click_weight'] +
-                         row['conversions'] * weights['conversion_weight']
-                         for index, row in data.iterrows()]
+    data['successes'] = [
+        row['impressions'] * weights['impression_weight']
+        + row['engagements'] * weights['engagement_weight']
+        + row['clicks'] * weights['click_weight']
+        + row['conversions'] * weights['conversion_weight']
+        for index, row in data.iterrows()
+    ]
 
     # Create trials column as costs + successes + 1
     # to guarantee successes <= trials and correct for free impressions
-    data['trials'] = [int(row['cost']) + row['successes']
-                      for index, row in data.iterrows()]
+    data['trials'] = [
+        int(row['cost']) + row['successes'] for index, row in data.iterrows()
+    ]
 
     # Drop processed columns
     drop = ['cost', 'impressions', 'engagements', 'clicks', 'conversions']
@@ -78,8 +85,9 @@ def preprocess(data, impression_weight=None, engagement_weight=None,
 def filter_dates(data, cutoff):
     """Return data with dates in cutoff range"""
     data['date'] = pd.to_datetime(data['date'], format='%Y-%m-%d').dt.date
-    data = data.loc[data['date'] >=
-                    datetime.date.today() - datetime.timedelta(days=cutoff)]
+    data = data.loc[
+        data['date'] >= datetime.date.today() - datetime.timedelta(days=cutoff)
+    ]
     return data
 
 
@@ -89,10 +97,10 @@ def reindex_options(data):
     return options and dataframe with option id column
     """
     combinations = data.drop(['date', 'trials', 'successes'], axis='columns')
-    options = combinations.drop_duplicates().reset_index() \
-                          .drop('index', axis='columns')
+    options = combinations.drop_duplicates().reset_index().drop('index', axis='columns')
     data['option_id'] = 0
     for i in range(len(data)):
-        data.at[i, 'option_id'] = \
-            options.loc[options['ad_id'] == data.iloc[i]['ad_id']].index[0]
+        data.at[i, 'option_id'] = options.loc[
+            options['ad_id'] == data.iloc[i]['ad_id']
+        ].index[0]
     return [options, data]

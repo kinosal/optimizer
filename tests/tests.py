@@ -52,9 +52,9 @@ class TestApp(TestSetup):
                     "impressions": 1000,
                     "engagements": 100,
                     "clicks": 10,
-                    "conversions": 1
+                    "conversions": 1,
                 }
-            ]
+            ],
         }
 
         response = self.app.test_client().post('/json', json=data)
@@ -68,10 +68,15 @@ class TestApp(TestSetup):
         assert response.status_code == 200
 
     def test_post_form(self):
-        response = self.app.test_client().post('/form', data={
-            'trials_1': 1000, 'successes_1': 100,
-            'trials_2': 1000, 'successes_2': 50
-        })
+        response = self.app.test_client().post(
+            '/form',
+            data={
+                'trials_1': 1000,
+                'successes_1': 100,
+                'trials_2': 1000,
+                'successes_2': 50,
+            },
+        )
         assert response.status_code == 200
         assert b'option' in response.data
         assert b'ad_share' in response.data
@@ -82,48 +87,63 @@ class TestApp(TestSetup):
 
     def test_post_csv_status_channel(self):
         date = str(datetime.date.today() - datetime.timedelta(days=1))
-        response = self.app.test_client().post('/csv', data={
-            'ads': """channel,date,ad_id,cost,impressions,engagements,clicks,conversions
-                      facebook,{},1234,1000,1000,100,10,1""".format(date),
-            'update': 'false',
-            'impression_weight': '',
-            'engagement_weight': '',
-            'click_weight': '',
-            'conversion_weight': '',
-            'output': 'status'
-        })
+        response = self.app.test_client().post(
+            '/csv',
+            data={
+                'ads': """channel,date,ad_id,cost,impressions,engagements,clicks,conversions
+                      facebook,{},1234,1000,1000,100,10,1""".format(
+                    date
+                ),
+                'update': 'false',
+                'impression_weight': '',
+                'engagement_weight': '',
+                'click_weight': '',
+                'conversion_weight': '',
+                'output': 'status',
+            },
+        )
         assert response.status_code == 200
         assert b'ad_id' in response.data
         assert b'ad_status' in response.data
 
     def test_post_csv_status_weights(self):
         date = str(datetime.date.today() - datetime.timedelta(days=1))
-        response = self.app.test_client().post('/csv', data={
-            'ads': """date,ad_id,cost,impressions,engagements,clicks,conversions
-                      {},1,1500,1000,100,10,1""".format(date),
-            'update': 'false',
-            'impression_weight': '100',
-            'engagement_weight': '0',
-            'click_weight': '0',
-            'conversion_weight': '0',
-            'output': 'status'
-        })
+        response = self.app.test_client().post(
+            '/csv',
+            data={
+                'ads': """date,ad_id,cost,impressions,engagements,clicks,conversions
+                      {},1,1500,1000,100,10,1""".format(
+                    date
+                ),
+                'update': 'false',
+                'impression_weight': '100',
+                'engagement_weight': '0',
+                'click_weight': '0',
+                'conversion_weight': '0',
+                'output': 'status',
+            },
+        )
         assert response.status_code == 200
         assert b'ad_id' in response.data
         assert b'ad_status' in response.data
 
     def test_post_csv_shares(self):
         date = str(datetime.date.today() - datetime.timedelta(days=1))
-        response = self.app.test_client().post('/csv', data={
-            'ads': """date,ad_id,cost,impressions,engagements,clicks,conversions
-                      {},1,1500,1000,100,10,1""".format(date),
-            'update': 'false',
-            'impression_weight': '',
-            'engagement_weight': '',
-            'click_weight': '',
-            'conversion_weight': '',
-            'output': 'share'
-        })
+        response = self.app.test_client().post(
+            '/csv',
+            data={
+                'ads': """date,ad_id,cost,impressions,engagements,clicks,conversions
+                      {},1,1500,1000,100,10,1""".format(
+                    date
+                ),
+                'update': 'false',
+                'impression_weight': '',
+                'engagement_weight': '',
+                'click_weight': '',
+                'conversion_weight': '',
+                'output': 'share',
+            },
+        )
         assert response.status_code == 200
         assert b'ad_id' in response.data
         assert b'ad_share' in response.data
@@ -144,9 +164,9 @@ class TestApi(TestSetup):
                     "impressions": 1000,
                     "engagements": 100,
                     "clicks": 10,
-                    "conversions": 1
+                    "conversions": 1,
                 }
-            ]
+            ],
         }
         db.session.add(User(name='Test', api_key='valid_key'))
         db.session.commit()
@@ -160,13 +180,13 @@ class TestApi(TestSetup):
         assert response.status_code == 401
 
         response = self.app.test_client().post(
-            '/api/v1/ads', json=self.payload, headers={"API_KEY": "invalid_key"}
+            '/api/v1/ads', json=self.payload, headers={'API_KEY': 'invalid_key'}
         )
         assert response.status_code == 401
 
     def test_ads_200(self):
         response = self.app.test_client().post(
-            '/api/v1/ads', json=self.payload, headers={"API_KEY": "valid_key"}
+            '/api/v1/ads', json=self.payload, headers={'API_KEY': 'valid_key'}
         )
         assert response.status_code == 200
         assert b'ad_id' in response.data

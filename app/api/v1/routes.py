@@ -20,28 +20,35 @@ api = Api(
 
 ads = api.namespace("ads", description="Analyze ad variants")
 
-stats = api.model("stats", {
-    "channel": fields.String,
-    "date": fields.String,
-    "ad_id": fields.String,
-    "cost": fields.Integer,
-    "impressions": fields.Integer,
-    "engagements": fields.Integer,
-    "clicks": fields.Integer,
-    "conversions": fields.Integer,
-})
+stats = api.model(
+    "stats",
+    {
+        "channel": fields.String,
+        "date": fields.String,
+        "ad_id": fields.String,
+        "cost": fields.Integer,
+        "impressions": fields.Integer,
+        "engagements": fields.Integer,
+        "clicks": fields.Integer,
+        "conversions": fields.Integer,
+    },
+)
 
 ads_request = api.model(
-    "Ads Request", {
+    "Ads Request",
+    {
         "optimize": fields.List(fields.String, required=True),
         "stats": fields.List(fields.Nested(stats), required=True),
-    }
+    },
 )
 
 ads_response = api.model(
-    "Ads Response", {
-        "channel": fields.String, "ad_id": fields.String, "ad_share": fields.Float,
-    }
+    "Ads Response",
+    {
+        "channel": fields.String,
+        "ad_id": fields.String,
+        "ad_share": fields.Float,
+    },
 )
 
 
@@ -63,8 +70,12 @@ class Ads(Resource):
         if not request.json['stats']:  # pragma: no cover
             abort(400, '"stats" key is empty')
 
-        weights = {'impression_weight': 0, 'engagement_weight': 0,
-                   'click_weight': 0, 'conversion_weight': 0}
+        weights = {
+            'impression_weight': 0,
+            'engagement_weight': 0,
+            'click_weight': 0,
+            'conversion_weight': 0,
+        }
         for metric in request.json['optimize']:
             weights[metric[:-1] + '_weight'] = None
 
