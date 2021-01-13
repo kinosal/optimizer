@@ -5,6 +5,10 @@ import ast
 from io import StringIO
 
 from flask import Flask, request, render_template
+from flask_sqlalchemy import SQLAlchemy
+import sentry_sdk
+from sentry_sdk.integrations.flask import FlaskIntegration
+from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 import numpy as np
 import pandas as pd
 from scipy.stats import beta
@@ -13,11 +17,13 @@ mpl.use('Agg')
 import matplotlib.pyplot as plt
 # from facebook_business.api import FacebookAdsApi
 # from facebook_business.adobjects.ad import Ad
-import sentry_sdk
-from sentry_sdk.integrations.flask import FlaskIntegration
 
 from app.scripts import process as pro
 from app.scripts import bandit as ban
+
+
+db = SQLAlchemy()
+
 
 CUTOFF = 14
 CUT_LEVEL = 0.5
@@ -33,10 +39,11 @@ def create_app(config_class: object):
     if os.environ.get("FLASK_ENV") == "production":  # pragma: no cover
         sentry_sdk.init(
             dsn="https://db6bdfc312434b7687d739a0c44ec603@sentry.io/1513206",
-            integrations=[FlaskIntegration()]
+            integrations=[FlaskIntegration(), SqlalchemyIntegration()]
         )
     app = Flask(__name__)
     app.config.from_object(config_class)
+    db.init_app(app)
 
     from app.api.v1 import api_v1
     app.register_blueprint(api_v1)

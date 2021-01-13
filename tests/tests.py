@@ -5,7 +5,8 @@ import datetime
 import unittest
 
 from app.config import TestingConfig
-from app import create_app
+from app import create_app, db
+from app.models.models import User
 
 
 class TestSetup(unittest.TestCase):
@@ -16,9 +17,12 @@ class TestSetup(unittest.TestCase):
         self.app = create_app(TestingConfig)
         self.app_context = self.app.app_context()
         self.app_context.push()
+        db.create_all()
 
     def tearDown(self):
         """Remove databse and app context after each test."""
+        db.session.remove()
+        db.drop_all()
         self.app_context.pop()
 
 
@@ -144,7 +148,8 @@ class TestApi(TestSetup):
                 }
             ]
         }
-        self.key = os.environ.get("API_KEY")
+        db.session.add(User(name='Test', api_key='valid_key'))
+        db.session.commit()
 
     def test_ads_400(self):
         response = self.app.test_client().post('/api/v1/ads', json={})
@@ -155,13 +160,13 @@ class TestApi(TestSetup):
         assert response.status_code == 401
 
         response = self.app.test_client().post(
-            '/api/v1/ads', json=self.payload, headers={"API_KEY": "wrong_key"}
+            '/api/v1/ads', json=self.payload, headers={"API_KEY": "invalid_key"}
         )
         assert response.status_code == 401
 
     def test_ads_200(self):
         response = self.app.test_client().post(
-            '/api/v1/ads', json=self.payload, headers={"API_KEY": self.key}
+            '/api/v1/ads', json=self.payload, headers={"API_KEY": "valid_key"}
         )
         assert response.status_code == 200
         assert b'ad_id' in response.data
