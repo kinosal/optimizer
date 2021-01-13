@@ -1,8 +1,6 @@
 """Flask app factory."""
 
 import os
-import datetime
-import math
 import ast
 from io import StringIO
 
@@ -13,8 +11,8 @@ from scipy.stats import beta
 import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
-from facebook_business.api import FacebookAdsApi
-from facebook_business.adobjects.ad import Ad
+# from facebook_business.api import FacebookAdsApi
+# from facebook_business.adobjects.ad import Ad
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 
@@ -40,34 +38,29 @@ def create_app(config_class: object):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
+    from app.api.v1 import api_v1
+    app.register_blueprint(api_v1)
+
     @app.route('/ping', methods=['GET', 'POST'])
     def ping():
-        """
-        Return string to show the server is alive
-        """
+        """Return string to show the server is alive."""
         return 'Server is here'
 
     @app.route('/', methods=['GET'])
     def root():
-        """
-        Root page with links to simple and CSV form
-        """
+        """Root page with links to simple and CSV form."""
         return render_template('index.html')
 
     @app.route('/json', methods=['POST'])
     def json():
-        """
-        Process ads JSON with daily breakdown of channel (optional), ad_id,
-        impressions, engagements, clicks and conversions;
-        return options with suggested status or share for next period
-        """
+        """Get optimal next period budget shares for ad options."""
+        # TODO: Remove this route in favor of api/v1/ads after informing users
 
-        # Check if JSON contains required data
-        if not 'optimize' in request.json:  # pragma: no cover
-            if not 'stats' in request.json:
+        if 'optimize' not in request.json:  # pragma: no cover
+            if 'stats' not in request.json:
                 return '"optimize" and "stats" keys missing in posted JSON object'
             return '"optimize" key missing in posted JSON object'
-        if not 'stats' in request.json:  # pragma: no cover
+        if 'stats' not in request.json:  # pragma: no cover
             return '"stats" key missing in posted JSON object'
 
         if not request.json['optimize']:  # pragma: no cover
@@ -86,11 +79,18 @@ def create_app(config_class: object):
         data = pro.preprocess(data, **weights)
         data = pro.filter_dates(data, cutoff=CUTOFF)
         [options, data] = pro.reindex_options(data)
-        bandit = add_daily_results(data, num_options=len(options), memory=True,
-                                   shape=SHAPE, cutoff=CUTOFF,
-                                   cut_level=CUT_LEVEL)
-        shares = choose(bandit=bandit, accelerate=True)
-        options = format_results(options, shares)
+
+        bandit = ban.Bandit(
+            num_options=len(options),
+            memory=True,
+            shape=SHAPE,
+            cutoff=CUTOFF,
+            cut_level=CUT_LEVEL,
+        )
+        bandit.add_daily_results(data)
+        shares = bandit.calculate_shares(accelerate=True)
+        options['ad_share'] = shares.tolist()
+
         return options.to_json(orient='records')
 
     @app.route('/form', methods=['GET', 'POST'])
@@ -111,7 +111,7 @@ def create_app(config_class: object):
             for i in range(num_options):
                 bandit.add_results(option_id=i, trials=trials[i],
                                    successes=successes[i])
-            shares = choose(bandit=bandit, accelerate=False)
+            shares = bandit.calculate_shares(accelerate=False)
             options = format_results(options, shares)
             records = options.to_dict('records')
             columns = options.columns.values
@@ -174,43 +174,56 @@ def create_app(config_class: object):
                 print(error)
                 message = 'Cannot pre-process your data. \
                          Please check the CSV input format and try again.'
-                return render_template('csv.html', error=message,
-                                       output=request.form['output'],
-                                       impression_weight=request.form['impression_weight'],
-                                       engagement_weight=request.form['engagement_weight'],
-                                       click_weight=request.form['click_weight'],
-                                       conversion_weight=request.form['conversion_weight'],
-                                       ads=request.form['ads'])
+                return render_template(
+                    'csv.html',
+                    error=message,
+                    output=request.form['output'],
+                    impression_weight=request.form['impression_weight'],
+                    engagement_weight=request.form['engagement_weight'],
+                    click_weight=request.form['click_weight'],
+                    conversion_weight=request.form['conversion_weight'],
+                    ads=request.form['ads'],
+                )
 
             try:
                 data = pro.filter_dates(data, cutoff=CUTOFF)
             except Exception as error:  # pragma: no cover
                 print(error)
                 message = 'Please check your dates (format should be YYYY-MM-DD).'
-                return render_template('csv.html', error=message,
-                                       output=request.form['output'],
-                                       impression_weight=request.form['impression_weight'],
-                                       engagement_weight=request.form['engagement_weight'],
-                                       click_weight=request.form['click_weight'],
-                                       conversion_weight=request.form['conversion_weight'],
-                                       ads=request.form['ads'])
+                return render_template(
+                    'csv.html',
+                    error=message,
+                    output=request.form['output'],
+                    impression_weight=request.form['impression_weight'],
+                    engagement_weight=request.form['engagement_weight'],
+                    click_weight=request.form['click_weight'],
+                    conversion_weight=request.form['conversion_weight'],
+                    ads=request.form['ads'],
+                )
             if data.empty:  # pragma: no cover
                 error = 'Please include results with data from the past ' + str(CUTOFF) + ' days.'
-                return render_template('csv.html', error=error,
-                                       output=request.form['output'],
-                                       impression_weight=request.form['impression_weight'],
-                                       engagement_weight=request.form['engagement_weight'],
-                                       click_weight=request.form['click_weight'],
-                                       conversion_weight=request.form['conversion_weight'],
-                                       ads=request.form['ads'])
+                return render_template(
+                    'csv.html',
+                    error=error,
+                    output=request.form['output'],
+                    impression_weight=request.form['impression_weight'],
+                    engagement_weight=request.form['engagement_weight'],
+                    click_weight=request.form['click_weight'],
+                    conversion_weight=request.form['conversion_weight'],
+                    ads=request.form['ads'],
+                )
 
             [options, data] = pro.reindex_options(data)
 
-            bandit = add_daily_results(data, num_options=len(options), memory=True,
-                                       shape=SHAPE, cutoff=CUTOFF,
-                                       cut_level=CUT_LEVEL)
-
-            shares = choose(bandit=bandit, accelerate=True)
+            bandit = ban.Bandit(
+                num_options=len(options),
+                memory=True,
+                shape=SHAPE,
+                cutoff=CUTOFF,
+                cut_level=CUT_LEVEL,
+            )
+            bandit.add_daily_results(data)
+            shares = bandit.calculate_shares(accelerate=True)
 
             output = request.form['output']
             if output == 'status':
@@ -250,38 +263,6 @@ def create_app(config_class: object):
         response.headers['Expires'] = 0
         response.headers['Pragma'] = 'no-cache'
         return response
-
-    def add_daily_results(data, num_options, memory, shape, cutoff, cut_level):
-        """
-        For each day, add a period with its option results to the Bandit
-        """
-        bandit = ban.Bandit(num_options, memory, shape, cutoff, cut_level)
-        for i in range(cutoff+1):
-            bandit.add_period()
-            daily_results = data.loc[data['date'] == datetime.date.today() -
-                                     datetime.timedelta(days=cutoff-i)]
-            for j in range(len(daily_results)):
-                bandit.add_results(int(daily_results.iloc[j]['option_id']),
-                                   daily_results.iloc[j]['trials'],
-                                   daily_results.iloc[j]['successes'])
-        return bandit
-
-    def choose(bandit, accelerate):
-        """
-        Choose best options at current state,
-        return each option's suggested share for the next period
-        """
-        if accelerate:
-            choices = math.ceil(bandit.num_options / 10)
-            repetitions = 10
-            # choices = int(np.sqrt(bandit.num_options))
-            # repetitions = math.ceil(bandit.num_options / choices)
-        else:
-            choices = 1
-            repetitions = 100
-        shares = bandit.repeat_choice(choices, repetitions) \
-            / (choices * repetitions)
-        return shares
 
     def format_results(options, shares, status=False):
         """

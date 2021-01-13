@@ -1,5 +1,6 @@
 """Unit tests."""
 
+import os
 import datetime
 import unittest
 
@@ -21,7 +22,9 @@ class TestSetup(unittest.TestCase):
         self.app_context.pop()
 
 
-class Tests(TestSetup):
+class TestBasic(TestSetup):
+    """Basic default tests."""
+
     def test_index(self):
         response = self.app.test_client().get('/')
         assert response.status_code == 200
@@ -30,15 +33,18 @@ class Tests(TestSetup):
         response = self.app.test_client().get('/ping')
         assert response.status_code == 200
 
+
+class TestApp(TestSetup):
+    """Test app factory."""
+
     def test_json(self):
-        date = str(datetime.date.today() - datetime.timedelta(days=1))
         data = {
             "optimize": ["clicks", "engagements", "conversions"],
             "stats": [
                 {
-                    "date": date,
-                    "ad_id": 1,
-                    "cost": 15,
+                    "date": str(datetime.date.today() - datetime.timedelta(days=1)),
+                    "ad_id": "1234",
+                    "cost": 1000,
                     "impressions": 1000,
                     "engagements": 100,
                     "clicks": 10,
@@ -74,7 +80,7 @@ class Tests(TestSetup):
         date = str(datetime.date.today() - datetime.timedelta(days=1))
         response = self.app.test_client().post('/csv', data={
             'ads': """channel,date,ad_id,cost,impressions,engagements,clicks,conversions
-                      facebook,{},1,1500,1000,100,10,1""".format(date),
+                      facebook,{},1234,1000,1000,100,10,1""".format(date),
             'update': 'false',
             'impression_weight': '',
             'engagement_weight': '',
@@ -114,6 +120,49 @@ class Tests(TestSetup):
             'conversion_weight': '',
             'output': 'share'
         })
+        assert response.status_code == 200
+        assert b'ad_id' in response.data
+        assert b'ad_share' in response.data
+
+
+class TestApi(TestSetup):
+    """Test api routes."""
+
+    def setUp(self):
+        super(TestApi, self).setUp()
+        self.payload = {
+            "optimize": ["clicks", "engagements", "conversions"],
+            "stats": [
+                {
+                    "date": str(datetime.date.today() - datetime.timedelta(days=1)),
+                    "ad_id": "1234",
+                    "cost": 1000,
+                    "impressions": 1000,
+                    "engagements": 100,
+                    "clicks": 10,
+                    "conversions": 1
+                }
+            ]
+        }
+        self.key = os.environ.get("API_KEY")
+
+    def test_ads_400(self):
+        response = self.app.test_client().post('/api/v1/ads', json={})
+        assert response.status_code == 400
+
+    def test_ads_401(self):
+        response = self.app.test_client().post('/api/v1/ads', json=self.payload)
+        assert response.status_code == 401
+
+        response = self.app.test_client().post(
+            '/api/v1/ads', json=self.payload, headers={"API_KEY": "wrong_key"}
+        )
+        assert response.status_code == 401
+
+    def test_ads_200(self):
+        response = self.app.test_client().post(
+            '/api/v1/ads', json=self.payload, headers={"API_KEY": self.key}
+        )
         assert response.status_code == 200
         assert b'ad_id' in response.data
         assert b'ad_share' in response.data

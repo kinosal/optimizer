@@ -1,3 +1,5 @@
+import datetime
+import math
 import numpy as np
 from scipy.stats import beta
 
@@ -39,6 +41,23 @@ class Bandit():
         if self.memory:
             self.periods['trials'][-1][option_id] += trials
             self.periods['successes'][-1][option_id] += successes
+
+    def add_daily_results(self, data):
+        """
+        For each day, add a period with its option results to the Bandit
+        """
+        for i in range(self.cutoff + 1):
+            self.add_period()
+            daily_results = data.loc[
+                data['date'] == datetime.date.today()
+                - datetime.timedelta(days=self.cutoff - i)
+            ]
+            for j in range(len(daily_results)):
+                self.add_results(
+                    int(daily_results.iloc[j]['option_id']),
+                    daily_results.iloc[j]['trials'],
+                    daily_results.iloc[j]['successes'],
+                )
 
     def weigh_options(self):
         """
@@ -110,3 +129,19 @@ class Bandit():
             for option in options:
                 option_counts[option] += 1
         return option_counts
+
+    def calculate_shares(self, accelerate):
+        """
+        Choose best options at current state,
+        return each option's suggested share for the next period
+        """
+        if accelerate:
+            choices = math.ceil(self.num_options / 10)
+            repetitions = 10
+            # choices = int(np.sqrt(self.num_options))
+            # repetitions = math.ceil(self.num_options / choices)
+        else:
+            choices = 1
+            repetitions = 100
+        shares = self.repeat_choice(choices, repetitions) / (choices * repetitions)
+        return shares

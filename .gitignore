@@ -6,4 +6,4 @@ zappa_settings.json
 __pycache__
 .coverage
 /htmlcov
-.png
+*.png
