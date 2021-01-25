@@ -24,9 +24,9 @@ stats = api.model(
     "stats",
     {
         "channel": fields.String,
-        "date": fields.String,
+        "date": fields.Date(format="iso8601"),  # YYYY-MM-DD
         "ad_id": fields.String,
-        "cost": fields.Integer,
+        "cost": fields.Integer,  # ad spend in cents
         "impressions": fields.Integer,
         "engagements": fields.Integer,
         "clicks": fields.Integer,
@@ -37,7 +37,11 @@ stats = api.model(
 ads_request = api.model(
     "Ads Request",
     {
-        "optimize": fields.List(fields.String, required=True),
+        "optimize": fields.List(
+            fields.String,
+            required=True,
+            description="any combination of 'impressions', 'engagements', 'clicks' and 'conversions'"
+        ),
         "stats": fields.List(fields.Nested(stats), required=True),
     },
 )
