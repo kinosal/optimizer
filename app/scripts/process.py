@@ -56,9 +56,11 @@ def preprocess(
             else:
                 weights[weight + '_weight'] = (
                     data['cost'].sum() / data[weight + 's'].sum()
-                ) ** 2
+                )
         else:
             weights[weight + '_weight'] = locals()[weight + '_weight']
+
+    print(f"weights:\n{weights}\n")
 
     # Create successes column as weighted sum of success metrics
     data['successes'] = [
@@ -72,7 +74,7 @@ def preprocess(
     # Create trials column as costs + successes + 1
     # to guarantee successes <= trials and correct for free impressions
     data['trials'] = [
-        int(row['cost']) + row['successes'] for index, row in data.iterrows()
+        int(row['cost']) + row['successes'] + 1 for index, row in data.iterrows()
     ]
 
     # Drop processed columns

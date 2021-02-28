@@ -84,7 +84,12 @@ class Ads(Resource):
             weights[metric[:-1] + '_weight'] = None
 
         data = pd.DataFrame(request.json['stats'])
+        print(f"input data:\n{data}\n")
+        print(f"input optimize:\n{request.json['optimize']}\n")
+
         data = pro.preprocess(data, **weights)
+        print(f"processed data:\n{data}\n")
+
         data = pro.filter_dates(data, cutoff=14)
         [options, data] = pro.reindex_options(data)
 
@@ -98,5 +103,7 @@ class Ads(Resource):
         bandit.add_daily_results(data)
         shares = bandit.calculate_shares(accelerate=True)
         options['ad_share'] = shares.tolist()
+
+        print(f"ad shares (result):\n{options}\n")
 
         return options.to_dict(orient='records')
