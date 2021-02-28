@@ -42,6 +42,7 @@ def create_app(config_class: object):
         sentry_sdk.init(
             dsn="https://db6bdfc312434b7687d739a0c44ec603@sentry.io/1513206",
             integrations=[FlaskIntegration(), SqlalchemyIntegration()],
+            traces_sample_rate=1.0,
         )
     app = Flask(__name__)
     app.config.from_object(config_class)
