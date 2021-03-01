@@ -11,6 +11,9 @@ from app.api.v1 import api_v1
 from app.scripts import process as pro
 from app.scripts import bandit as ban
 
+pd.set_option("display.max_columns", 10)
+pd.set_option("display.max_rows", 200)
+
 api = Api(
     api_v1,
     version="1.0",
@@ -84,11 +87,11 @@ class Ads(Resource):
             weights[metric[:-1] + '_weight'] = None
 
         data = pd.DataFrame(request.json['stats'])
-        print(f"input data:\n{data}\n")
-        print(f"input optimize:\n{request.json['optimize']}\n")
+        print(f"----------\ninput data:\n{data}")
+        print(f"input optimize:\n{request.json['optimize']}")
 
         data = pro.preprocess(data, **weights)
-        print(f"processed data:\n{data}\n")
+        print(f"processed data:\n{data}")
 
         data = pro.filter_dates(data, cutoff=14)
         [options, data] = pro.reindex_options(data)
@@ -104,6 +107,6 @@ class Ads(Resource):
         shares = bandit.calculate_shares(accelerate=True)
         options['ad_share'] = shares.tolist()
 
-        print(f"ad shares (result):\n{options}\n")
+        print(f"ad shares (result):\n{options}")
 
         return options.to_dict(orient='records')

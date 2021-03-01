@@ -60,7 +60,7 @@ def preprocess(
         else:
             weights[weight + '_weight'] = locals()[weight + '_weight']
 
-    print(f"weights:\n{weights}\n")
+    print(f"weights:\n{weights}")
 
     # Create successes column as weighted sum of success metrics
     data['successes'] = [
