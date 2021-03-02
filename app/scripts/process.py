@@ -81,7 +81,7 @@ def preprocess(
     drop = ['cost', 'impressions', 'engagements', 'clicks', 'conversions']
     data.drop(drop, axis='columns', inplace=True)
 
-    return data
+    return data.reset_index(drop=True)
 
 
 def filter_dates(data, cutoff):
@@ -102,7 +102,6 @@ def reindex_options(data):
     options = combinations.drop_duplicates().reset_index().drop('index', axis='columns')
     data['option_id'] = 0
     for i in range(len(data)):
-        data.at[i, 'option_id'] = options.loc[
-            options['ad_id'] == data.iloc[i]['ad_id']
-        ].index[0]
+        option_id = options.loc[options['ad_id'] == data.iloc[i]['ad_id']].index[0]
+        data.at[i, 'option_id'] = option_id
     return [options, data]
