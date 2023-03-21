@@ -16,7 +16,7 @@ zappa = "^0.56"
 pandas = "^1.2"
 scipy = "^1.9"
 matplotlib = "^3.3"
-sentry-sdk = {version = "^1.0", extras = ["flask", "sqlalchemy"]}
+sentry-sdk = {version = "^1.14", extras = ["flask", "sqlalchemy"]}
 # facebook_business = "^8.0.2"
 
 [tool.poetry.dev-dependencies]
