@@ -1,6 +1,6 @@
 [[package]]
 name = "alembic"
-version = "1.10.4"
+version = "1.11.3"
 description = "A database migration tool for SQLAlchemy."
 category = "main"
 optional = false
@@ -29,7 +29,7 @@ dev = ["black", "coverage", "isort", "pre-commit", "pyenchant", "pylint"]
 
 [[package]]
 name = "argcomplete"
-version = "3.0.8"
+version = "3.1.1"
 description = "Bash tab completion for argparse"
 category = "main"
 optional = false
@@ -55,18 +55,19 @@ tests-no-zope = ["cloudpickle", "hypothesis", "mypy (>=1.1.1)", "pympler", "pyte
 
 [[package]]
 name = "black"
-version = "22.12.0"
+version = "23.7.0"
 description = "The uncompromising code formatter."
 category = "dev"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 
 [package.dependencies]
 click = ">=8.0.0"
 mypy-extensions = ">=0.4.3"
+packaging = ">=22.0"
 pathspec = ">=0.9.0"
 platformdirs = ">=2"
-tomli = {version = ">=1.1.0", markers = "python_full_version < \"3.11.0a7\""}
+tomli = {version = ">=1.1.0", markers = "python_version < \"3.11\""}
 typing-extensions = {version = ">=3.10.0.0", markers = "python_version < \"3.10\""}
 
 [package.extras]
@@ -85,14 +86,14 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "boto3"
-version = "1.26.125"
+version = "1.28.29"
 description = "The AWS SDK for Python"
 category = "main"
 optional = false
 python-versions = ">= 3.7"
 
 [package.dependencies]
-botocore = ">=1.29.125,<1.30.0"
+botocore = ">=1.31.29,<1.32.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.6.0,<0.7.0"
 
@@ -101,7 +102,7 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.29.125"
+version = "1.31.29"
 description = "Low-level, data-driven core of boto 3."
 category = "main"
 optional = false
@@ -113,11 +114,11 @@ python-dateutil = ">=2.1,<3.0.0"
 urllib3 = ">=1.25.4,<1.27"
 
 [package.extras]
-crt = ["awscrt (==0.16.9)"]
+crt = ["awscrt (==0.16.26)"]
 
 [[package]]
 name = "certifi"
-version = "2022.12.7"
+version = "2023.7.22"
 description = "Python package for providing Mozilla's CA Bundle."
 category = "main"
 optional = false
@@ -138,7 +139,7 @@ six = "*"
 
 [[package]]
 name = "charset-normalizer"
-version = "3.1.0"
+version = "3.2.0"
 description = "The Real First Universal Charset Detector. Open, modern and actively maintained alternative to Chardet."
 category = "main"
 optional = false
@@ -146,7 +147,7 @@ python-versions = ">=3.7.0"
 
 [[package]]
 name = "click"
-version = "8.1.3"
+version = "8.1.7"
 description = "Composable command line interface toolkit"
 category = "main"
 optional = false
@@ -165,7 +166,7 @@ python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,>=2.7
 
 [[package]]
 name = "contourpy"
-version = "1.0.7"
+version = "1.1.0"
 description = "Python library for calculating contours of 2D quadrilateral grids"
 category = "main"
 optional = false
@@ -175,19 +176,19 @@ python-versions = ">=3.8"
 numpy = ">=1.16"
 
 [package.extras]
-bokeh = ["bokeh", "chromedriver", "selenium"]
 docs = ["furo", "sphinx-copybutton"]
-mypy = ["contourpy", "docutils-stubs", "mypy (==0.991)", "types-pillow"]
-test = ["matplotlib", "pillow", "pytest"]
-test-no-images = ["pytest"]
+bokeh = ["bokeh", "selenium"]
+mypy = ["contourpy", "docutils-stubs", "mypy (==1.2.0)", "types-pillow"]
+test = ["contourpy", "matplotlib", "pillow"]
+test-no-images = ["pytest", "pytest-cov", "wurlitzer"]
 
 [[package]]
 name = "coverage"
-version = "7.2.5"
+version = "7.3.0"
 description = "Code coverage measurement for Python"
 category = "dev"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 
 [package.extras]
 toml = ["tomli"]
@@ -210,7 +211,7 @@ python-versions = "*"
 
 [[package]]
 name = "flake8"
-version = "6.0.0"
+version = "6.1.0"
 description = "the modular source code checker: pep8 pyflakes and co"
 category = "dev"
 optional = false
@@ -218,8 +219,8 @@ python-versions = ">=3.8.1"
 
 [package.dependencies]
 mccabe = ">=0.7.0,<0.8.0"
-pycodestyle = ">=2.10.0,<2.11.0"
-pyflakes = ">=3.0.0,<3.1.0"
+pycodestyle = ">=2.11.0,<2.12.0"
+pyflakes = ">=3.1.0,<3.2.0"
 
 [[package]]
 name = "flask"
@@ -287,19 +288,19 @@ Flask = "*"
 
 [[package]]
 name = "flask-sqlalchemy"
-version = "3.0.3"
+version = "3.0.5"
 description = "Add SQLAlchemy support to your Flask application."
 category = "main"
 optional = false
 python-versions = ">=3.7"
 
 [package.dependencies]
-Flask = ">=2.2"
-SQLAlchemy = ">=1.4.18"
+flask = ">=2.2.5"
+sqlalchemy = ">=1.4.18"
 
 [[package]]
 name = "fonttools"
-version = "4.39.3"
+version = "4.42.0"
 description = "Tools to manipulate font files"
 category = "main"
 optional = false
@@ -349,11 +350,11 @@ python-versions = ">=3.5"
 
 [[package]]
 name = "importlib-metadata"
-version = "6.6.0"
+version = "6.8.0"
 description = "Read metadata from Python packages"
 category = "main"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 
 [package.dependencies]
 zipp = ">=0.5"
@@ -361,22 +362,22 @@ zipp = ">=0.5"
 [package.extras]
 docs = ["sphinx (>=3.5)", "jaraco.packaging (>=9)", "rst.linker (>=1.9)", "furo", "sphinx-lint", "jaraco.tidelift (>=1.4)"]
 perf = ["ipython"]
-testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "flake8 (<5)", "pytest-cov", "pytest-enabler (>=1.3)", "packaging", "pyfakefs", "flufl.flake8", "pytest-perf (>=0.9.2)", "pytest-black (>=0.3.7)", "pytest-mypy (>=0.9.1)", "pytest-flake8", "importlib-resources (>=1.3)"]
+testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-ruff", "packaging", "pyfakefs", "flufl.flake8", "pytest-perf (>=0.9.2)", "pytest-black (>=0.3.7)", "pytest-mypy (>=0.9.1)", "importlib-resources (>=1.3)"]
 
 [[package]]
 name = "importlib-resources"
-version = "5.12.0"
+version = "6.0.1"
 description = "Read resources from Python packages"
 category = "main"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 
 [package.dependencies]
 zipp = {version = ">=3.1.0", markers = "python_version < \"3.10\""}
 
 [package.extras]
-docs = ["sphinx (>=3.5)", "jaraco.packaging (>=9)", "rst.linker (>=1.9)", "furo", "sphinx-lint", "jaraco.tidelift (>=1.4)"]
-testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "flake8 (<5)", "pytest-cov", "pytest-enabler (>=1.3)", "pytest-black (>=0.3.7)", "pytest-mypy (>=0.9.1)", "pytest-flake8"]
+docs = ["sphinx (>=3.5)", "jaraco.packaging (>=9.3)", "rst.linker (>=1.9)", "furo", "sphinx-lint", "jaraco.tidelift (>=1.4)"]
+testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-ruff", "pytest-black (>=0.3.7)", "pytest-mypy (>=0.9.1)"]
 
 [[package]]
 name = "itsdangerous"
@@ -410,21 +411,35 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "jsonschema"
-version = "4.17.3"
+version = "4.19.0"
 description = "An implementation of JSON Schema validation for Python"
 category = "main"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 
 [package.dependencies]
-attrs = ">=17.4.0"
+attrs = ">=22.2.0"
 importlib-resources = {version = ">=1.4.0", markers = "python_version < \"3.9\""}
+jsonschema-specifications = ">=2023.03.6"
 pkgutil-resolve-name = {version = ">=1.3.10", markers = "python_version < \"3.9\""}
-pyrsistent = ">=0.14.0,<0.17.0 || >0.17.0,<0.17.1 || >0.17.1,<0.17.2 || >0.17.2"
+referencing = ">=0.28.4"
+rpds-py = ">=0.7.1"
 
 [package.extras]
 format = ["fqdn", "idna", "isoduration", "jsonpointer (>1.13)", "rfc3339-validator", "rfc3987", "uri-template", "webcolors (>=1.11)"]
 format-nongpl = ["fqdn", "idna", "isoduration", "jsonpointer (>1.13)", "rfc3339-validator", "rfc3986-validator (>0.1.0)", "uri-template", "webcolors (>=1.11)"]
+
+[[package]]
+name = "jsonschema-specifications"
+version = "2023.7.1"
+description = "The JSON Schema meta-schemas and vocabularies, exposed as a Registry"
+category = "main"
+optional = false
+python-versions = ">=3.8"
+
+[package.dependencies]
+importlib-resources = {version = ">=1.4.0", markers = "python_version < \"3.9\""}
+referencing = ">=0.28.0"
 
 [[package]]
 name = "kappa"
@@ -466,7 +481,7 @@ testing = ["pytest"]
 
 [[package]]
 name = "markupsafe"
-version = "2.1.2"
+version = "2.1.3"
 description = "Safely add untrusted strings to HTML/XML markup."
 category = "main"
 optional = false
@@ -474,7 +489,7 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "matplotlib"
-version = "3.7.1"
+version = "3.7.2"
 description = "Python plotting package"
 category = "main"
 optional = false
@@ -489,7 +504,7 @@ kiwisolver = ">=1.0.1"
 numpy = ">=1.20"
 packaging = ">=20.0"
 pillow = ">=6.2.0"
-pyparsing = ">=2.3.1"
+pyparsing = ">=2.3.1,<3.1"
 python-dateutil = ">=2.7"
 setuptools_scm = ">=7"
 
@@ -511,7 +526,7 @@ python-versions = ">=3.5"
 
 [[package]]
 name = "numpy"
-version = "1.24.3"
+version = "1.24.4"
 description = "Fundamental package for array computing in Python"
 category = "main"
 optional = false
@@ -547,7 +562,7 @@ test = ["hypothesis (>=5.5.3)", "pytest (>=6.0)", "pytest-xdist (>=1.31)"]
 
 [[package]]
 name = "pathspec"
-version = "0.11.1"
+version = "0.11.2"
 description = "Utility library for gitignore style pattern matching of file paths."
 category = "dev"
 optional = false
@@ -555,11 +570,11 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "pillow"
-version = "9.5.0"
+version = "10.0.0"
 description = "Python Imaging Library (Fork)"
 category = "main"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 
 [package.extras]
 docs = ["furo", "olefile", "sphinx (>=2.4)", "sphinx-copybutton", "sphinx-inline-tabs", "sphinx-removed-in", "sphinxext-opengraph"]
@@ -583,19 +598,19 @@ python-versions = "*"
 
 [[package]]
 name = "platformdirs"
-version = "3.5.0"
+version = "3.10.0"
 description = "A small Python package for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
 category = "dev"
 optional = false
 python-versions = ">=3.7"
 
 [package.extras]
-docs = ["furo (>=2023.3.27)", "proselint (>=0.13)", "sphinx-autodoc-typehints (>=1.23,!=1.23.4)", "sphinx (>=6.1.3)"]
-test = ["appdirs (==1.4.4)", "covdefaults (>=2.3)", "pytest-cov (>=4)", "pytest-mock (>=3.10)", "pytest (>=7.3.1)"]
+docs = ["furo (>=2023.7.26)", "proselint (>=0.13)", "sphinx-autodoc-typehints (>=1.24)", "sphinx (>=7.1.1)"]
+test = ["appdirs (==1.4.4)", "covdefaults (>=2.3)", "pytest-cov (>=4.1)", "pytest-mock (>=3.11.1)", "pytest (>=7.4)"]
 
 [[package]]
 name = "psycopg2-binary"
-version = "2.9.6"
+version = "2.9.7"
 description = "psycopg2 - Python-PostgreSQL Database Adapter"
 category = "main"
 optional = false
@@ -603,19 +618,33 @@ python-versions = ">=3.6"
 
 [[package]]
 name = "pycodestyle"
-version = "2.10.0"
+version = "2.11.0"
 description = "Python style guide checker"
+category = "dev"
+optional = false
+python-versions = ">=3.8"
+
+[[package]]
+name = "pydocstyle"
+version = "6.3.0"
+description = "Python docstring style checker"
 category = "dev"
 optional = false
 python-versions = ">=3.6"
 
+[package.dependencies]
+snowballstemmer = ">=2.2.0"
+
+[package.extras]
+toml = ["tomli (>=1.2.3)"]
+
 [[package]]
 name = "pyflakes"
-version = "3.0.1"
+version = "3.1.0"
 description = "passive checker of Python programs"
 category = "dev"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.8"
 
 [[package]]
 name = "pyparsing"
@@ -627,14 +656,6 @@ python-versions = ">=3.6.8"
 
 [package.extras]
 diagrams = ["railroad-diagrams", "jinja2"]
-
-[[package]]
-name = "pyrsistent"
-version = "0.19.3"
-description = "Persistent/Functional/Immutable data structures"
-category = "main"
-optional = false
-python-versions = ">=3.7"
 
 [[package]]
 name = "python-dateutil"
@@ -649,11 +670,11 @@ six = ">=1.5"
 
 [[package]]
 name = "python-dotenv"
-version = "0.21.1"
+version = "1.0.0"
 description = "Read key-value pairs from a .env file and set them as environment variables"
 category = "dev"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 
 [package.extras]
 cli = ["click (>=5.0)"]
@@ -682,15 +703,27 @@ python-versions = "*"
 
 [[package]]
 name = "pyyaml"
-version = "6.0"
+version = "6.0.1"
 description = "YAML parser and emitter for Python"
 category = "main"
 optional = false
 python-versions = ">=3.6"
 
 [[package]]
+name = "referencing"
+version = "0.30.2"
+description = "JSON Referencing + Python"
+category = "main"
+optional = false
+python-versions = ">=3.8"
+
+[package.dependencies]
+attrs = ">=22.2.0"
+rpds-py = ">=0.7.0"
+
+[[package]]
 name = "requests"
-version = "2.29.0"
+version = "2.31.0"
 description = "Python HTTP for Humans."
 category = "main"
 optional = false
@@ -700,15 +733,23 @@ python-versions = ">=3.7"
 certifi = ">=2017.4.17"
 charset-normalizer = ">=2,<4"
 idna = ">=2.5,<4"
-urllib3 = ">=1.21.1,<1.27"
+urllib3 = ">=1.21.1,<3"
 
 [package.extras]
 socks = ["PySocks (>=1.5.6,!=1.5.7)"]
 use_chardet_on_py3 = ["chardet (>=3.0.2,<6)"]
 
 [[package]]
+name = "rpds-py"
+version = "0.9.2"
+description = "Python bindings to Rust's persistent data structures (rpds)"
+category = "main"
+optional = false
+python-versions = ">=3.8"
+
+[[package]]
 name = "s3transfer"
-version = "0.6.0"
+version = "0.6.2"
 description = "An Amazon S3 Transfer Manager"
 category = "main"
 optional = false
@@ -738,7 +779,7 @@ dev = ["mypy", "typing-extensions", "pycodestyle", "flake8"]
 
 [[package]]
 name = "sentry-sdk"
-version = "1.21.1"
+version = "1.29.2"
 description = "Python client for Sentry (https://sentry.io)"
 category = "main"
 optional = false
@@ -748,6 +789,7 @@ python-versions = "*"
 blinker = {version = ">=1.1", optional = true, markers = "extra == \"flask\""}
 certifi = "*"
 flask = {version = ">=0.11", optional = true, markers = "extra == \"flask\""}
+markupsafe = {version = "*", optional = true, markers = "extra == \"flask\""}
 sqlalchemy = {version = ">=1.2", optional = true, markers = "extra == \"sqlalchemy\""}
 urllib3 = {version = ">=1.26.11", markers = "python_version >= \"3.6\""}
 
@@ -761,10 +803,11 @@ chalice = ["chalice (>=1.16.0)"]
 django = ["django (>=1.8)"]
 falcon = ["falcon (>=1.4)"]
 fastapi = ["fastapi (>=0.79.0)"]
-flask = ["flask (>=0.11)", "blinker (>=1.1)"]
+flask = ["flask (>=0.11)", "blinker (>=1.1)", "markupsafe"]
 grpcio = ["grpcio (>=1.21.1)"]
 httpx = ["httpx (>=0.16.0)"]
 huey = ["huey (>=2)"]
+loguru = ["loguru (>=0.5)"]
 opentelemetry = ["opentelemetry-distro (>=0.35b0)"]
 pure_eval = ["pure-eval", "executing", "asttokens"]
 pymongo = ["pymongo (>=3.1)"]
@@ -803,8 +846,16 @@ optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
 
 [[package]]
+name = "snowballstemmer"
+version = "2.2.0"
+description = "This package provides 29 stemmers for 28 languages generated from Snowball algorithms."
+category = "dev"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "sqlalchemy"
-version = "2.0.12"
+version = "2.0.20"
 description = "Database Abstraction Library"
 category = "main"
 optional = false
@@ -815,7 +866,7 @@ greenlet = {version = "!=0.4.17", markers = "platform_machine == \"aarch64\" or 
 typing-extensions = ">=4.2.0"
 
 [package.extras]
-aiomysql = ["greenlet (!=0.4.17)", "aiomysql"]
+aiomysql = ["greenlet (!=0.4.17)", "aiomysql (>=0.2.0)"]
 aiosqlite = ["greenlet (!=0.4.17)", "aiosqlite", "typing-extensions (!=3.10.0.1)"]
 asyncio = ["greenlet (!=0.4.17)"]
 asyncmy = ["greenlet (!=0.4.17)", "asyncmy (>=0.2.3,!=0.2.4,!=0.2.6)"]
@@ -834,6 +885,7 @@ postgresql_pg8000 = ["pg8000 (>=1.29.1)"]
 postgresql_psycopg = ["psycopg (>=3.0.7)"]
 postgresql_psycopg2binary = ["psycopg2-binary"]
 postgresql_psycopg2cffi = ["psycopg2cffi"]
+postgresql_psycopgbinary = ["psycopg[binary] (>=3.0.7)"]
 pymysql = ["pymysql"]
 sqlcipher = ["sqlcipher3-binary"]
 
@@ -863,7 +915,7 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "tqdm"
-version = "4.65.0"
+version = "4.66.1"
 description = "Fast, Extensible Progress Meter"
 category = "main"
 optional = false
@@ -873,14 +925,14 @@ python-versions = ">=3.7"
 colorama = {version = "*", markers = "platform_system == \"Windows\""}
 
 [package.extras]
-dev = ["py-make (>=0.1.0)", "twine", "wheel"]
+dev = ["pytest (>=6)", "pytest-cov", "pytest-timeout", "pytest-xdist"]
 notebook = ["ipywidgets (>=6)"]
 slack = ["slack-sdk"]
 telegram = ["requests"]
 
 [[package]]
 name = "troposphere"
-version = "4.3.2"
+version = "4.4.1"
 description = "AWS CloudFormation creation library"
 category = "main"
 optional = false
@@ -894,7 +946,7 @@ policy = ["awacs (>=2.0.0)"]
 
 [[package]]
 name = "typing-extensions"
-version = "4.5.0"
+version = "4.7.1"
 description = "Backported and Experimental Type Hints for Python 3.7+"
 category = "main"
 optional = false
@@ -902,7 +954,7 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "urllib3"
-version = "1.26.15"
+version = "1.26.16"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
 category = "main"
 optional = false
@@ -915,7 +967,7 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 
 [[package]]
 name = "werkzeug"
-version = "2.3.3"
+version = "2.3.7"
 description = "The comprehensive WSGI web application library."
 category = "main"
 optional = false
@@ -954,20 +1006,20 @@ werkzeug = "*"
 
 [[package]]
 name = "zipp"
-version = "3.15.0"
+version = "3.16.2"
 description = "Backport of pathlib-compatible object wrapper for zip files"
 category = "main"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 
 [package.extras]
-docs = ["sphinx (>=3.5)", "jaraco.packaging (>=9)", "rst.linker (>=1.9)", "furo", "sphinx-lint", "jaraco.tidelift (>=1.4)"]
-testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "flake8 (<5)", "pytest-cov", "pytest-enabler (>=1.3)", "jaraco.itertools", "jaraco.functools", "more-itertools", "big-o", "pytest-black (>=0.3.7)", "pytest-mypy (>=0.9.1)", "pytest-flake8"]
+docs = ["sphinx (>=3.5)", "jaraco.packaging (>=9.3)", "rst.linker (>=1.9)", "furo", "sphinx-lint", "jaraco.tidelift (>=1.4)"]
+testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-ruff", "jaraco.itertools", "jaraco.functools", "more-itertools", "big-o", "pytest-ignore-flaky", "pytest-black (>=0.3.7)", "pytest-mypy (>=0.9.1)"]
 
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8.6"
-content-hash = "255a70d39b5ce3783f3330fabd67e06ba2c12351bfe235a7a4da9d65de5942c0"
+content-hash = "1aef503f93641cab683e37bae24307844748c7b26a36dfc7636172571c9f9c26"
 
 [metadata.files]
 alembic = []
@@ -1003,6 +1055,7 @@ itsdangerous = []
 jinja2 = []
 jmespath = []
 jsonschema = []
+jsonschema-specifications = []
 kappa = []
 kiwisolver = []
 mako = []
@@ -1020,20 +1073,23 @@ placebo = []
 platformdirs = []
 psycopg2-binary = []
 pycodestyle = []
+pydocstyle = []
 pyflakes = []
 pyparsing = []
-pyrsistent = []
 python-dateutil = []
 python-dotenv = []
 python-slugify = []
 pytz = []
 pyyaml = []
+referencing = []
 requests = []
+rpds-py = []
 s3transfer = []
 scipy = []
 sentry-sdk = []
 setuptools-scm = []
 six = []
+snowballstemmer = []
 sqlalchemy = []
 text-unidecode = []
 toml = []
