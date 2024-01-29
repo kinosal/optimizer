@@ -322,14 +322,18 @@ def create_app(config_class: object):
         Save plot with bandit options' PDFs (beta distributions)
         """
         x = np.linspace(0, 1, 100)
+        means = []
+        stds = []
         for i in range(len(bandit.trials)):
-            plt.plot(
-                x,
-                beta.pdf(
-                    x, bandit.successes[i], bandit.trials[i] - bandit.successes[i]
-                ),
-                label="option " + str(i + 1),
-            )
+            a = bandit.successes[i]
+            b = bandit.trials[i] - bandit.successes[i]
+            means.append(beta.mean(a, b))
+            stds.append(beta.std(a, b))
+            plt.plot(x, beta.pdf(x, a, b), label="option " + str(i + 1))
+
+        i_min, min_mean = min(enumerate(means), key=lambda x: x[1])
+        i_max, max_mean = max(enumerate(means), key=lambda x: x[1])
+        plt.xlim(max(min_mean - 10 * stds[i_min], 0), min(max_mean + 10 * stds[i_max], 1))
         plt.xlabel("Success rate")
         plt.ylabel("Probablity density")
         plt.grid()
