@@ -3,7 +3,7 @@ import math
 import numpy as np
 import matplotlib
 
-matplotlib.use('Agg')
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from app.scripts import split as spl
 from app.scripts import bandit as ban
@@ -104,7 +104,7 @@ def simulate(
     rounding=True,
     accelerate=True,
     memory=True,
-    shape='linear',
+    shape="linear",
     cutoff=28,
     cut_level=0.5,
 ):
@@ -117,9 +117,9 @@ def simulate(
     rate_changes = [random.uniform(1 - change, 1 + change) for rate in true_rates]
 
     # Initialize Split or Bandit instances
-    if method == 'split':
+    if method == "split":
         chooser = spl.Split(num_options=num_options)
-    elif method == 'bandit':
+    elif method == "bandit":
         chooser = ban.Bandit(
             num_options=num_options,
             memory=memory,
@@ -150,11 +150,11 @@ def simulate(
         ]
 
         # Add results to Split or Bandit
-        if method == 'split':
+        if method == "split":
             successes.append(
                 add_split_results(trials, max_p, rates, chooser, period, rounding)
             )
-        elif method == 'bandit':
+        elif method == "bandit":
             if memory:
                 chooser.add_period()
             successes.append(
@@ -219,7 +219,7 @@ def compare_params(
     rounding=True,
     accelerate=True,
     memory=False,
-    shape='constant',
+    shape="constant",
     cutoff=14,
     cut_level=0.5,
 ):
@@ -231,7 +231,7 @@ def compare_params(
 
     results = []
     for value in values:
-        if param == 'max_p':
+        if param == "max_p":
             successes, optima = simulate(
                 method,
                 periods,
@@ -247,7 +247,7 @@ def compare_params(
                 cutoff,
                 cut_level,
             )[0:2]
-        elif param == 'trials':
+        elif param == "trials":
             successes, optima = simulate(
                 method,
                 periods,
@@ -263,7 +263,7 @@ def compare_params(
                 cutoff,
                 cut_level,
             )[0:2]
-        elif param == 'true_rates':
+        elif param == "true_rates":
             successes, optima = simulate(
                 method,
                 periods,
@@ -279,7 +279,7 @@ def compare_params(
                 cutoff,
                 cut_level,
             )[0:2]
-        elif param == 'deviation':
+        elif param == "deviation":
             successes, optima = simulate(
                 method,
                 periods,
@@ -295,7 +295,7 @@ def compare_params(
                 cutoff,
                 cut_level,
             )[0:2]
-        elif param == 'shape':
+        elif param == "shape":
             memory = True
             successes, optima = simulate(
                 method,
@@ -312,7 +312,7 @@ def compare_params(
                 cutoff,
                 cut_level,
             )[0:2]
-        elif param == 'cutoff':
+        elif param == "cutoff":
             memory = True
             successes, optima = simulate(
                 method,
@@ -329,7 +329,7 @@ def compare_params(
                 value,
                 cut_level,
             )[0:2]
-        elif param == 'cut_level':
+        elif param == "cut_level":
             memory = True
             successes, optima = simulate(
                 method,
@@ -346,7 +346,7 @@ def compare_params(
                 cutoff,
                 value,
             )[0:2]
-        elif param == 'accelerate':
+        elif param == "accelerate":
             successes, optima = simulate(
                 method,
                 periods,
@@ -369,20 +369,20 @@ def compare_params(
     period_values = {}
     for i in range(len(values)):
         period_values[str(values[i])] = results[i]
-    period_values['max_successes'] = [1.0] * periods
+    period_values["max_successes"] = [1.0] * periods
 
     return {
-        'parameters': {
-            'method': method,
-            'param': param,
-            'values': values,
-            'true_rates': true_rates,
-            'deviation': deviation,
-            'change': change,
-            'trials': trials,
-            'max_p': max_p,
+        "parameters": {
+            "method": method,
+            "param": param,
+            "values": values,
+            "true_rates": true_rates,
+            "deviation": deviation,
+            "change": change,
+            "trials": trials,
+            "max_p": max_p,
         },
-        'periods': period_values,
+        "periods": period_values,
     }
 
 
@@ -403,26 +403,26 @@ def compare_methods(
     """
 
     split_successes, max_successes, base_successes = simulate(
-        'split', periods, true_rates, deviation, change, trials, max_p, rounding
+        "split", periods, true_rates, deviation, change, trials, max_p, rounding
     )
 
     bandit_successes = simulate(
-        'bandit', periods, true_rates, deviation, change, trials, rounding, accelerate
+        "bandit", periods, true_rates, deviation, change, trials, rounding, accelerate
     )[0]
 
     return {
-        'parameters': {
-            'true_rates': true_rates,
-            'deviation': deviation,
-            'change': change,
-            'trials': trials,
-            'max_p': max_p,
+        "parameters": {
+            "true_rates": true_rates,
+            "deviation": deviation,
+            "change": change,
+            "trials": trials,
+            "max_p": max_p,
         },
-        'periods': {
-            'max_successes': max_successes,
-            'split_successes': split_successes,
-            'bandit_successes': bandit_successes,
-            'base_successes': base_successes,
+        "periods": {
+            "max_successes": max_successes,
+            "split_successes": split_successes,
+            "bandit_successes": bandit_successes,
+            "base_successes": base_successes,
         },
     }
 
@@ -431,52 +431,52 @@ def plot(periods, parameters, relative=False):
     """
     Plot periodic results
     """
-    x = np.linspace(1, len(periods['max_successes']), len(periods['max_successes']))
+    x = np.linspace(1, len(periods["max_successes"]), len(periods["max_successes"]))
     if relative:
         for graph in list(periods):
             plt.plot(
                 x,
-                [x / y for x, y in zip(periods[graph], periods['max_successes'])],
+                [x / y for x, y in zip(periods[graph], periods["max_successes"])],
                 label=graph,
             )
-        plt.ylabel('Cumulatated successes / optimum')
+        plt.ylabel("Cumulatated successes / optimum")
     else:
         for graph in list(periods):
             plt.plot(x, periods[graph], label=graph)
-        plt.ylabel('Cumulatated total number of successes')
-    if isinstance(parameters['true_rates'], list) and len(parameters['true_rates']) > 4:
+        plt.ylabel("Cumulatated total number of successes")
+    if isinstance(parameters["true_rates"], list) and len(parameters["true_rates"]) > 4:
         plt.title(
-            'num_options: '
-            + str(len(parameters['true_rates']))
-            + ', true_rates: '
-            + str(round(min(parameters['true_rates']), 4))
-            + '..'
-            + str(round(max(parameters['true_rates']), 4))
-            + ', deviation: '
-            + str(parameters['deviation'])
-            + ', change: '
-            + str(parameters['change'])
-            + ', trials: '
-            + str(parameters['trials'])
-            + ', max_p: '
-            + str(parameters['max_p']),
+            "num_options: "
+            + str(len(parameters["true_rates"]))
+            + ", true_rates: "
+            + str(round(min(parameters["true_rates"]), 4))
+            + ".."
+            + str(round(max(parameters["true_rates"]), 4))
+            + ", deviation: "
+            + str(parameters["deviation"])
+            + ", change: "
+            + str(parameters["change"])
+            + ", trials: "
+            + str(parameters["trials"])
+            + ", max_p: "
+            + str(parameters["max_p"]),
             fontsize=10,
         )
     else:
         plt.title(
-            'true_rates: '
-            + str(parameters['true_rates'])
-            + ', deviation: '
-            + str(parameters['deviation'])
-            + ', change: '
-            + str(parameters['change'])
-            + ', trials: '
-            + str(parameters['trials'])
-            + ', max_p: '
-            + str(parameters['max_p']),
+            "true_rates: "
+            + str(parameters["true_rates"])
+            + ", deviation: "
+            + str(parameters["deviation"])
+            + ", change: "
+            + str(parameters["change"])
+            + ", trials: "
+            + str(parameters["trials"])
+            + ", max_p: "
+            + str(parameters["max_p"]),
             fontsize=10,
         )
-    plt.xlabel('Periods')
+    plt.xlabel("Periods")
     plt.legend()
     # plt.show()
-    plt.savefig('results.png')
+    plt.savefig("results.png")

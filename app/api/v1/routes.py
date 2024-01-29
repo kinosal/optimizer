@@ -43,7 +43,7 @@ ads_request = api.model(
         "optimize": fields.List(
             fields.String,
             required=True,
-            description="any combination of 'impressions', 'engagements', 'clicks' and 'conversions'"
+            description="any combination of 'impressions', 'engagements', 'clicks' and 'conversions'",
         ),
         "stats": fields.List(fields.Nested(stats), required=True),
     },
@@ -59,7 +59,7 @@ ads_response = api.model(
 )
 
 
-@ads.route('')
+@ads.route("")
 class Ads(Resource):
     @require_auth
     @api.doc(
@@ -70,23 +70,23 @@ class Ads(Resource):
     @api.marshal_list_with(ads_response)
     def post(self) -> List[Dict]:
         """Get optimal next period budget shares for ad options."""
-        if not request.json['optimize']:  # pragma: no cover
-            if not request.json['stats']:
+        if not request.json["optimize"]:  # pragma: no cover
+            if not request.json["stats"]:
                 abort(400, '"optimize" and "stats" keys are empty')
             abort(400, '"optimize" key is empty')
-        if not request.json['stats']:  # pragma: no cover
+        if not request.json["stats"]:  # pragma: no cover
             abort(400, '"stats" key is empty')
 
         weights = {
-            'impression_weight': 0,
-            'engagement_weight': 0,
-            'click_weight': 0,
-            'conversion_weight': 0,
+            "impression_weight": 0,
+            "engagement_weight": 0,
+            "click_weight": 0,
+            "conversion_weight": 0,
         }
-        for metric in request.json['optimize']:
-            weights[metric[:-1] + '_weight'] = None
+        for metric in request.json["optimize"]:
+            weights[metric[:-1] + "_weight"] = None
 
-        data = pd.DataFrame(request.json['stats'])
+        data = pd.DataFrame(request.json["stats"])
         print(f"\n----------\n\ninput data:\n{data}")
         print(f"\ninput optimize:\n{request.json['optimize']}")
 
@@ -99,13 +99,13 @@ class Ads(Resource):
         bandit = ban.Bandit(
             num_options=len(options),
             memory=True,
-            shape='linear',
+            shape="linear",
             cutoff=14,
             cut_level=0.5,
         )
         bandit.add_daily_results(data)
         shares = bandit.calculate_shares(accelerate=True)
-        options['ad_share'] = shares.tolist()
+        options["ad_share"] = shares.tolist()
         print(f"\nad shares (result):\n{options}")
 
-        return options.to_dict(orient='records')
+        return options.to_dict(orient="records")

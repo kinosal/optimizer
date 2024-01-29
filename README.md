@@ -18,7 +18,7 @@ Please submit any [issues](https://github.com/kinosal/optimizer/issues) you have
 
 ## Environment
 
-- Python 3.8
+- Python 3.9
 - Flask (web framework)
 - zappa (deployment to AWS lambda)
 - numpy (Python computing package)

@@ -14,7 +14,7 @@ import pandas as pd
 from scipy.stats import beta
 import matplotlib as mpl
 
-mpl.use('Agg')
+mpl.use("Agg")
 import matplotlib.pyplot as plt
 
 # from facebook_business.api import FacebookAdsApi
@@ -29,7 +29,7 @@ db = SQLAlchemy()
 
 CUTOFF = 14
 CUT_LEVEL = 0.5
-SHAPE = 'linear'
+SHAPE = "linear"
 
 
 def create_app(config_class: object):
@@ -52,45 +52,45 @@ def create_app(config_class: object):
 
     app.register_blueprint(api_v1)
 
-    @app.route('/ping', methods=['GET', 'POST'])
+    @app.route("/ping", methods=["GET", "POST"])
     def ping():
         """Return string to show the server is alive."""
-        return 'Server is here'
+        return "Server is here"
 
-    @app.route('/', methods=['GET'])
+    @app.route("/", methods=["GET"])
     def root():
         """Root page with links to simple and CSV form."""
-        return render_template('index.html')
+        return render_template("index.html")
 
-    @app.route('/json', methods=['POST'])
+    @app.route("/json", methods=["POST"])
     def json():
         """Get optimal next period budget shares for ad options."""
         # TODO: Remove this route in favor of api/v1/ads after informing users
 
-        if 'optimize' not in request.json:  # pragma: no cover
-            if 'stats' not in request.json:
+        if "optimize" not in request.json:  # pragma: no cover
+            if "stats" not in request.json:
                 return '"optimize" and "stats" keys missing in posted JSON object'
             return '"optimize" key missing in posted JSON object'
-        if 'stats' not in request.json:  # pragma: no cover
+        if "stats" not in request.json:  # pragma: no cover
             return '"stats" key missing in posted JSON object'
 
-        if not request.json['optimize']:  # pragma: no cover
-            if not request.json['stats']:
+        if not request.json["optimize"]:  # pragma: no cover
+            if not request.json["stats"]:
                 return '"optimize" and "stats" keys are empty'
             return '"optimize" key is empty'
-        if not request.json['stats']:  # pragma: no cover
+        if not request.json["stats"]:  # pragma: no cover
             return '"stats" key is empty'
 
         weights = {
-            'impression_weight': 0,
-            'engagement_weight': 0,
-            'click_weight': 0,
-            'conversion_weight': 0,
+            "impression_weight": 0,
+            "engagement_weight": 0,
+            "click_weight": 0,
+            "conversion_weight": 0,
         }
-        for metric in request.json['optimize']:
-            weights[metric[:-1] + '_weight'] = None
+        for metric in request.json["optimize"]:
+            weights[metric[:-1] + "_weight"] = None
 
-        data = pd.DataFrame(request.json['stats'])
+        data = pd.DataFrame(request.json["stats"])
         data = pro.preprocess(data, **weights)
         data = pro.filter_dates(data, cutoff=CUTOFF)
         [options, data] = pro.reindex_options(data)
@@ -104,21 +104,21 @@ def create_app(config_class: object):
         )
         bandit.add_daily_results(data)
         shares = bandit.calculate_shares(accelerate=True)
-        options['ad_share'] = shares.tolist()
+        options["ad_share"] = shares.tolist()
 
-        return options.to_json(orient='records')
+        return options.to_json(orient="records")
 
-    @app.route('/form', methods=['GET', 'POST'])
+    @app.route("/form", methods=["GET", "POST"])
     def form():
         """
         Provide form with cumulated trial and success inputs for multiple options,
         return options with suggested budget share for next period
         """
 
-        if request.method == 'POST':
+        if request.method == "POST":
             entries = [value for value in list(request.form.values()) if value]
             num_options = int(len(entries) / 2)
-            options = pd.DataFrame([{'option': str(i + 1)} for i in range(num_options)])
+            options = pd.DataFrame([{"option": str(i + 1)} for i in range(num_options)])
             trials = [int(entries[i * 2]) for i in range(num_options)]
             successes = [int(entries[i * 2 + 1]) for i in range(num_options)]
             bandit = ban.Bandit(num_options=num_options, memory=False)
@@ -128,19 +128,19 @@ def create_app(config_class: object):
                 )
             shares = bandit.calculate_shares(accelerate=False)
             options = format_results(options, shares)
-            records = options.to_dict('records')
+            records = options.to_dict("records")
             columns = options.columns.values
             save_plot(bandit)
             return render_template(
-                'form_result.html',
+                "form_result.html",
                 records=records,
                 columns=columns,
-                plot='/static/images/plot.png',
+                plot="/static/images/plot.png",
             )
 
-        return render_template('form.html')
+        return render_template("form.html")
 
-    @app.route('/csv', methods=['GET', 'POST'])
+    @app.route("/csv", methods=["GET", "POST"])
     def csv():
         """
         Provide form to paste ads CSV with daily breakdown of channel (optional),
@@ -149,99 +149,99 @@ def create_app(config_class: object):
         provide direct upload to Facebook via API
         """
 
-        if request.method == 'POST':
-            if request.form['update'] == 'true':  # pragma: no cover
-                app_id = request.form['app_id']
-                app_secret = request.form['app_secret']
-                access_token = request.form['access_token']
-                channels = ast.literal_eval(request.form['channels'])
-                records = ast.literal_eval(request.form['records'])
-                updatable = ['facebook', 'instagram']
+        if request.method == "POST":
+            if request.form["update"] == "true":  # pragma: no cover
+                app_id = request.form["app_id"]
+                app_secret = request.form["app_secret"]
+                access_token = request.form["access_token"]
+                channels = ast.literal_eval(request.form["channels"])
+                records = ast.literal_eval(request.form["records"])
+                updatable = ["facebook", "instagram"]
                 indices = []
                 for channel in updatable:
                     if channel in channels:
                         indices.append(channels.index(channel))
-                results = pd.DataFrame(columns=['ad_id', 'ad_status'])
+                results = pd.DataFrame(columns=["ad_id", "ad_status"])
                 for index in indices:
                     for record in records[index]:
                         results.loc[len(results)] = [
-                            record['ad_id'],
-                            record['ad_status'],
+                            record["ad_id"],
+                            record["ad_status"],
                         ]
                 updated = update_facebook(app_id, app_secret, access_token, results)
-                records = updated.to_dict('records')
+                records = updated.to_dict("records")
                 columns = updated.columns.values
                 return render_template(
-                    'update_result.html', records=records, columns=columns
+                    "update_result.html", records=records, columns=columns
                 )
 
             weights = {}
             for weight in [
-                'impression_weight',
-                'engagement_weight',
-                'click_weight',
-                'conversion_weight',
+                "impression_weight",
+                "engagement_weight",
+                "click_weight",
+                "conversion_weight",
             ]:
-                if request.form[weight] == '':
+                if request.form[weight] == "":
                     weights[weight] = None
                 else:
                     weights[weight] = int(request.form[weight])
 
-            data = pd.read_csv(StringIO(request.form['ads']), sep=None, engine='python')
+            data = pd.read_csv(StringIO(request.form["ads"]), sep=None, engine="python")
 
             try:
                 data = pro.preprocess(
                     data,
-                    weights['impression_weight'],
-                    weights['engagement_weight'],
-                    weights['click_weight'],
-                    weights['conversion_weight'],
+                    weights["impression_weight"],
+                    weights["engagement_weight"],
+                    weights["click_weight"],
+                    weights["conversion_weight"],
                 )
             except Exception as error:  # pragma: no cover
                 print(error)
-                message = 'Cannot pre-process your data. \
-                         Please check the CSV input format and try again.'
+                message = "Cannot pre-process your data. \
+                         Please check the CSV input format and try again."
                 return render_template(
-                    'csv.html',
+                    "csv.html",
                     error=message,
-                    output=request.form['output'],
-                    impression_weight=request.form['impression_weight'],
-                    engagement_weight=request.form['engagement_weight'],
-                    click_weight=request.form['click_weight'],
-                    conversion_weight=request.form['conversion_weight'],
-                    ads=request.form['ads'],
+                    output=request.form["output"],
+                    impression_weight=request.form["impression_weight"],
+                    engagement_weight=request.form["engagement_weight"],
+                    click_weight=request.form["click_weight"],
+                    conversion_weight=request.form["conversion_weight"],
+                    ads=request.form["ads"],
                 )
 
             try:
                 data = pro.filter_dates(data, cutoff=CUTOFF)
             except Exception as error:  # pragma: no cover
                 print(error)
-                message = 'Please check your dates (format should be YYYY-MM-DD).'
+                message = "Please check your dates (format should be YYYY-MM-DD)."
                 return render_template(
-                    'csv.html',
+                    "csv.html",
                     error=message,
-                    output=request.form['output'],
-                    impression_weight=request.form['impression_weight'],
-                    engagement_weight=request.form['engagement_weight'],
-                    click_weight=request.form['click_weight'],
-                    conversion_weight=request.form['conversion_weight'],
-                    ads=request.form['ads'],
+                    output=request.form["output"],
+                    impression_weight=request.form["impression_weight"],
+                    engagement_weight=request.form["engagement_weight"],
+                    click_weight=request.form["click_weight"],
+                    conversion_weight=request.form["conversion_weight"],
+                    ads=request.form["ads"],
                 )
             if data.empty:  # pragma: no cover
                 error = (
-                    'Please include results with data from the past '
+                    "Please include results with data from the past "
                     + str(CUTOFF)
-                    + ' days.'
+                    + " days."
                 )
                 return render_template(
-                    'csv.html',
+                    "csv.html",
                     error=error,
-                    output=request.form['output'],
-                    impression_weight=request.form['impression_weight'],
-                    engagement_weight=request.form['engagement_weight'],
-                    click_weight=request.form['click_weight'],
-                    conversion_weight=request.form['conversion_weight'],
-                    ads=request.form['ads'],
+                    output=request.form["output"],
+                    impression_weight=request.form["impression_weight"],
+                    engagement_weight=request.form["engagement_weight"],
+                    click_weight=request.form["click_weight"],
+                    conversion_weight=request.form["conversion_weight"],
+                    ads=request.form["ads"],
                 )
 
             [options, data] = pro.reindex_options(data)
@@ -256,50 +256,50 @@ def create_app(config_class: object):
             bandit.add_daily_results(data)
             shares = bandit.calculate_shares(accelerate=True)
 
-            output = request.form['output']
-            if output == 'status':
+            output = request.form["output"]
+            if output == "status":
                 results = format_results(options, shares, status=True)
-            elif output == 'share':
+            elif output == "share":
                 results = format_results(options, shares, status=False).round(2)
 
-            if 'channel' in options.columns:
+            if "channel" in options.columns:
                 channel_shares = (
                     format_results(options, shares, status=False)
-                    .groupby('channel')['ad_share']
+                    .groupby("channel")["ad_share"]
                     .sum()
                     .round(2)
                 )
                 channels = []
                 records = []
-                for name, group in results.groupby('channel'):
+                for name, group in results.groupby("channel"):
                     channels.append(name)
-                    group = group.drop(['channel'], axis=1)
+                    group = group.drop(["channel"], axis=1)
                     columns = group.columns.values
-                    records.append(group.to_dict('records'))
+                    records.append(group.to_dict("records"))
                 return render_template(
-                    'csv_result_channels.html',
+                    "csv_result_channels.html",
                     channels=channels,
                     channel_shares=channel_shares,
                     records=records,
                     columns=columns,
                 )
 
-            records = results.to_dict('records')
+            records = results.to_dict("records")
             columns = results.columns.values
-            return render_template('csv_result.html', records=records, columns=columns)
+            return render_template("csv_result.html", records=records, columns=columns)
 
-        return render_template('csv.html')
+        return render_template("csv.html")
 
     @app.after_request
     def after_request(response):
         """
         Clear server cache after every request to display newest plot image
         """
-        response.headers[
-            'Cache-Control'
-        ] = 'no-cache, no-store, must-revalidate, public, max-age=0'
-        response.headers['Expires'] = 0
-        response.headers['Pragma'] = 'no-cache'
+        response.headers["Cache-Control"] = (
+            "no-cache, no-store, must-revalidate, public, max-age=0"
+        )
+        response.headers["Expires"] = 0
+        response.headers["Pragma"] = "no-cache"
         return response
 
     def format_results(options, shares, status=False):
@@ -309,12 +309,12 @@ def create_app(config_class: object):
         results = options.copy()
         if status:
             status = shares > 0
-            results['ad_status'] = status.tolist()
-            results['ad_status'].replace(True, 'ACTIVE', inplace=True)
-            results['ad_status'].replace(False, 'PAUSED', inplace=True)
+            results["ad_status"] = status.tolist()
+            results["ad_status"] = results["ad_status"].replace(True, "ACTIVE")
+            results["ad_status"] = results["ad_status"].replace(False, "PAUSED")
         else:
-            results['ad_share'] = shares.tolist()
-            results['ad_share'] = results['ad_share']
+            results["ad_share"] = shares.tolist()
+            results["ad_share"] = results["ad_share"]
         return results
 
     def save_plot(bandit):
@@ -328,14 +328,14 @@ def create_app(config_class: object):
                 beta.pdf(
                     x, bandit.successes[i], bandit.trials[i] - bandit.successes[i]
                 ),
-                label='option ' + str(i + 1),
+                label="option " + str(i + 1),
             )
-        plt.xlabel('Success rate')
-        plt.ylabel('Probablity density')
+        plt.xlabel("Success rate")
+        plt.ylabel("Probablity density")
         plt.grid()
         plt.yticks([])
         plt.legend()
-        plt.savefig('app/static/images/plot.png')
+        plt.savefig("app/static/images/plot.png")
         plt.clf()
 
     def update_facebook(app_id, app_secret, access_token, options):  # pragma: no cover
@@ -359,20 +359,20 @@ def create_app(config_class: object):
             # Loop through options within batch, compare current and suggested
             # ad status and update if changed
             for _, row in option_batch.iterrows():
-                ad_id = str(row['ad_id'])
+                ad_id = str(row["ad_id"])
                 ad = Ad(ad_id)
                 ad.api_get(fields=[Ad.Field.status])
                 old_status = ad[Ad.Field.status]
-                new_status = row['ad_status']
+                new_status = row["ad_status"]
                 if old_status != new_status:
                     ad[Ad.Field.status] = new_status
-                    updated.append([ad_id, old_status + ' -> ' + new_status])
+                    updated.append([ad_id, old_status + " -> " + new_status])
                     ad.api_update(
                         batch=update_batch,
                         fields=[],
                         params={Ad.Field.status: new_status},
                     )
             update_batch.execute()
-        return pd.DataFrame(updated, columns=['ad_id', 'updated'])
+        return pd.DataFrame(updated, columns=["ad_id", "updated"])
 
     return app

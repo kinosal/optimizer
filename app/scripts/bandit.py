@@ -12,7 +12,7 @@ class Bandit:
     """
 
     def __init__(
-        self, num_options, memory=True, shape='linear', cutoff=28, cut_level=0.5
+        self, num_options, memory=True, shape="linear", cutoff=28, cut_level=0.5
     ):
         self.memory = memory
         self.num_options = num_options
@@ -20,7 +20,7 @@ class Bandit:
         self.trials = np.zeros(shape=(self.num_options,), dtype=int)
         self.successes = np.zeros(shape=(self.num_options,), dtype=int)
         if self.memory:
-            self.periods = {'trials': [], 'successes': []}
+            self.periods = {"trials": [], "successes": []}
             self.shape = shape
             self.cutoff = cutoff
             self.cut_level = cut_level
@@ -29,8 +29,8 @@ class Bandit:
         """
         Add new empty period to memory
         """
-        self.periods['trials'].append(np.zeros(shape=(self.num_options,), dtype=int))
-        self.periods['successes'].append(np.zeros(shape=(self.num_options,), dtype=int))
+        self.periods["trials"].append(np.zeros(shape=(self.num_options,), dtype=int))
+        self.periods["successes"].append(np.zeros(shape=(self.num_options,), dtype=int))
 
     def add_results(self, option_id, trials, successes):
         """
@@ -39,8 +39,8 @@ class Bandit:
         self.trials[option_id] += trials
         self.successes[option_id] += successes
         if self.memory:
-            self.periods['trials'][-1][option_id] += trials
-            self.periods['successes'][-1][option_id] += successes
+            self.periods["trials"][-1][option_id] += trials
+            self.periods["successes"][-1][option_id] += successes
 
     def add_daily_results(self, data):
         """
@@ -49,14 +49,14 @@ class Bandit:
         for i in range(self.cutoff + 1):
             self.add_period()
             daily_results = data.loc[
-                data['date']
+                data["date"]
                 == datetime.date.today() - datetime.timedelta(days=self.cutoff - i)
             ]
             for j in range(len(daily_results)):
                 self.add_results(
-                    int(daily_results.iloc[j]['option_id']),
-                    daily_results.iloc[j]['trials'],
-                    daily_results.iloc[j]['successes'],
+                    int(daily_results.iloc[j]["option_id"]),
+                    daily_results.iloc[j]["trials"],
+                    daily_results.iloc[j]["successes"],
                 )
 
     def weigh_options(self):
@@ -67,31 +67,29 @@ class Bandit:
         # Initialize trial and success weights for each option
         trial_weights = np.zeros(shape=(self.num_options,), dtype=float)
         success_weights = np.zeros(shape=(self.num_options,), dtype=float)
-        num_periods = len(self.periods['trials'])
+        num_periods = len(self.periods["trials"])
         # Loop over each period and option and
         # determine and add respective weights
         for period_id in range(num_periods):
             distance = num_periods - period_id
             for option_id in range(self.num_options):
-                trials = self.periods['trials'][period_id][option_id]
-                successes = self.periods['successes'][period_id][option_id]
+                trials = self.periods["trials"][period_id][option_id]
+                successes = self.periods["successes"][period_id][option_id]
                 if distance < self.cutoff:
-                    if self.shape == 'constant':  # pragma: no cover
+                    if self.shape == "constant":  # pragma: no cover
                         # Equal weight for every period
                         weight = 1
-                    elif self.shape == 'linear':
+                    elif self.shape == "linear":
                         # Weight linearly decreases with distance
                         weight = 1 - distance / self.cutoff * (1 - self.cut_level)
-                    elif self.shape == 'degressive':  # pragma: no cover
+                    elif self.shape == "degressive":  # pragma: no cover
                         # Weight decrease (slope) shrinks with distance
                         weight = 1 - (1 - self.cut_level) / self.cutoff ** (
                             1 / 2
                         ) * distance ** (1 / 2)
-                    elif self.shape == 'progressive':  # pragma: no cover
+                    elif self.shape == "progressive":  # pragma: no cover
                         # Weight decrease (slope) grows over distance
-                        weight = (
-                            1 - (1 - self.cut_level) / self.cutoff ** 2 * distance ** 2
-                        )
+                        weight = 1 - (1 - self.cut_level) / self.cutoff**2 * distance**2
                     trial_weights[option_id] += trials * weight
                     success_weights[option_id] += successes * weight
         return [trial_weights, success_weights]
